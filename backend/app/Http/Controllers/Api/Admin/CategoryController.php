@@ -35,14 +35,23 @@ class CategoryController extends Controller
         $data = $request->validate([
             'category_name' => ['sometimes', 'string', 'max:255'],
             'category_code' => ['sometimes', 'string', 'max:20', Rule::unique('categories', 'category_code')->ignore($category->id)],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
+        if (array_key_exists('is_active', $data)) {
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
 
+        $wasActive = $category->is_active;
         $category->update($data);
+
+        $verb = array_key_exists('is_active', $data) && $data['is_active'] !== $wasActive
+            ? ($data['is_active'] ? 'Reactivated' : 'Deactivated')
+            : 'Edited';
 
         AuditLog::record(
             $request->user()->id,
-            'category_edited',
-            "Edited category {$category->category_name} ({$category->category_code}).",
+            $verb === 'Edited' ? 'category_edited' : 'category_'.strtolower($verb),
+            "{$verb} category {$category->category_name} ({$category->category_code}).",
             Category::class,
             $category->id
         );

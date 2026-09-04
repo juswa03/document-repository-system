@@ -727,7 +727,9 @@ class SubmissionController extends Controller
         $req = $required ? 'required' : 'sometimes';
 
         return [
-            'request_type_id' => [$req, 'exists:request_types,id'],
+            'request_type_id' => [$req, $required
+                ? Rule::exists('request_types', 'id')->where('is_active', true)
+                : 'exists:request_types,id'],
             'title' => [$req, 'string', 'min:3', 'max:255'],
             'description' => [$req, 'string', 'min:20', 'max:2000'],
             'needed_by' => [$req, 'date'],
@@ -809,7 +811,9 @@ class SubmissionController extends Controller
             'keywords' => [$req, 'string', 'min:2', 'max:500'],
             'description' => [$req, 'string', 'min:20', 'max:2000'],
             'remarks' => ['nullable', 'string', 'max:2000'],
-            'category_id' => [$req, 'exists:categories,id'],
+            'category_id' => [$req, $required
+                ? Rule::exists('categories', 'id')->where('is_active', true)
+                : 'exists:categories,id'],
             'file' => [
                 $fileRequired ? 'required' : 'nullable',
                 'file',

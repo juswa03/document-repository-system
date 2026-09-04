@@ -42,8 +42,6 @@ return [
             // admin panel.
             'key' => env('ANTHROPIC_API_KEY'),
 
-            // Selectable models, cheapest first. Prices are $/1M tokens
-            // (input / output) for the admin UI; not used for billing.
             'models' => [
                 'claude-haiku-4-5' => ['label' => 'Claude Haiku 4.5', 'input' => 1.00, 'output' => 5.00],
                 'claude-sonnet-5' => ['label' => 'Claude Sonnet 5', 'input' => 2.00, 'output' => 10.00],

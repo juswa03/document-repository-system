@@ -35,14 +35,23 @@ class OfficeController extends Controller
         $data = $request->validate([
             'office_name' => ['sometimes', 'string', 'max:255'],
             'office_code' => ['sometimes', 'string', 'max:20', Rule::unique('offices', 'office_code')->ignore($office->id)],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
+        if (array_key_exists('is_active', $data)) {
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
 
+        $wasActive = $office->is_active;
         $office->update($data);
+
+        $verb = array_key_exists('is_active', $data) && $data['is_active'] !== $wasActive
+            ? ($data['is_active'] ? 'Reactivated' : 'Deactivated')
+            : 'Edited';
 
         AuditLog::record(
             $request->user()->id,
-            'office_edited',
-            "Edited office {$office->office_name} ({$office->office_code}).",
+            $verb === 'Edited' ? 'office_edited' : 'office_'.strtolower($verb),
+            "{$verb} office {$office->office_name} ({$office->office_code}).",
             Office::class,
             $office->id
         );

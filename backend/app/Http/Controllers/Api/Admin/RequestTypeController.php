@@ -35,14 +35,23 @@ class RequestTypeController extends Controller
         $data = $request->validate([
             'type_name' => ['sometimes', 'string', 'max:255'],
             'type_code' => ['sometimes', 'string', 'max:20', Rule::unique('request_types', 'type_code')->ignore($requestType->id)],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
+        if (array_key_exists('is_active', $data)) {
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
 
+        $wasActive = $requestType->is_active;
         $requestType->update($data);
+
+        $verb = array_key_exists('is_active', $data) && $data['is_active'] !== $wasActive
+            ? ($data['is_active'] ? 'Reactivated' : 'Deactivated')
+            : 'Edited';
 
         AuditLog::record(
             $request->user()->id,
-            'request_type_edited',
-            "Edited request type {$requestType->type_name} ({$requestType->type_code}).",
+            $verb === 'Edited' ? 'request_type_edited' : 'request_type_'.strtolower($verb),
+            "{$verb} request type {$requestType->type_name} ({$requestType->type_code}).",
             RequestType::class,
             $requestType->id
         );

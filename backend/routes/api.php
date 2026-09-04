@@ -39,9 +39,16 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/me', [LoginController::class, 'me']);
 
     // Lookup data for dropdowns — any authenticated role can read these.
-    Route::get('/request-types', fn () => response()->json(RequestType::orderBy('type_name')->get()));
-    Route::get('/categories', fn () => response()->json(Category::orderBy('category_name')->get()));
-    Route::get('/offices', fn () => response()->json(Office::orderBy('office_name')->get()));
+    // Lookups for dropdowns — active only, unless ?all=1 (admin screens).
+    Route::get('/request-types', fn () => response()->json(
+        RequestType::unless(request()->boolean('all'), fn ($q) => $q->active())->orderBy('type_name')->get()
+    ));
+    Route::get('/categories', fn () => response()->json(
+        Category::unless(request()->boolean('all'), fn ($q) => $q->active())->orderBy('category_name')->get()
+    ));
+    Route::get('/offices', fn () => response()->json(
+        Office::unless(request()->boolean('all'), fn ($q) => $q->active())->orderBy('office_name')->get()
+    ));
 
     // Notifications — any authenticated user reads/marks their own.
     Route::get('/notifications', [NotificationController::class, 'index']);
