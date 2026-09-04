@@ -8,6 +8,7 @@ class SystemSetting extends Model
 {
     protected $fillable = [
         'maintenance_mode',
+        'maintenance_message',
         'audit_logging_enabled',
         'ai_enabled',
         'ai_provider',
@@ -39,6 +40,7 @@ class SystemSetting extends Model
     {
         return static::query()->orderBy('id')->firstOr(fn () => static::forceCreate([
             'maintenance_mode' => false,
+            'maintenance_message' => null,
             'audit_logging_enabled' => true,
             'ai_enabled' => (bool) config('ai.enabled'),
             'ai_provider' => config('ai.provider'),

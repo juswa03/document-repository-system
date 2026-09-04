@@ -44,10 +44,12 @@ class LoginController extends Controller
             ]);
         }
 
-        if (SystemSetting::current()->maintenance_mode && $user->role !== User::ROLE_SYSTEM_ADMIN) {
+        $settings = SystemSetting::current();
+        if ($settings->maintenance_mode && $user->role !== User::ROLE_SYSTEM_ADMIN) {
             AuditLog::record($user->id, 'login_denied', 'Sign-in blocked: maintenance mode.', User::class, $user->id);
             throw ValidationException::withMessages([
-                'email' => 'The system is temporarily under maintenance. Please try again later.',
+                'email' => $settings->maintenance_message
+                    ?: 'The system is temporarily under maintenance. Please try again later.',
             ]);
         }
 
