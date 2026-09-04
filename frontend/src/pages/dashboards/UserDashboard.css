@@ -1,0 +1,33 @@
+/* User dashboard specifics. Scoped here so it never touches
+   dashboards.css. Uses the same design tokens as the rest of the app. */
+
+.sub-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+  padding: 0.5rem 0.2rem;
+}
+
+.sub-detail-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.sub-detail-grid dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-label);
+}
+
+.sub-detail-grid dd {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-value);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

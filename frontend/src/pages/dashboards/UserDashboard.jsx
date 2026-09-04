@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import StatusBadge from '../../components/StatusBadge';
 import ResubmitModal from './ResubmitModal';
@@ -7,6 +7,45 @@ import { downloadDocumentFile } from '../../lib/download';
 import { checkUploadFile } from '../../lib/uploads';
 import { useAuth } from '../../context/AuthContext';
 import './dashboards.css';
+import './UserDashboard.css';
+
+/** The metadata the /dashboard/submissions response already carries. */
+function SubmissionDetail({ s }) {
+  const rows =
+    s.kind === 'document'
+      ? [
+          ['Title', s.title],
+          ['Category', s.category],
+          ['Document type', s.document_type],
+          ['Document date', s.document_date],
+          ['Reporting period', s.reporting_period],
+          ['Proposed access level', s.access_level],
+          ['Version', s.version_number ? `v${s.version_number}` : null],
+          ['Keywords', s.keywords],
+          ['Description', s.description],
+          ["Reviewer's note", s.remarks],
+        ]
+      : [
+          ['Title', s.title],
+          ['Request type', s.type],
+          ['Needed by', s.needed_by],
+          ['Amount', s.amount],
+          ['Access level', s.access_level],
+          ['Details', s.description],
+          ["Reviewer's note", s.remarks],
+        ];
+
+  return (
+    <dl className="sub-detail-grid">
+      {rows.map(([label, value]) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd>{value || <span className="cell-muted">—</span>}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 const DOCUMENT_TYPES = ['report', 'memo', 'minutes', 'plan', 'template', 'evidence', 'dataset'];
 const ACCESS_LEVELS = [
@@ -44,6 +83,7 @@ export default function UserDashboard() {
   const [formError, setFormError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [resubmitTarget, setResubmitTarget] = useState(null);
+  const [detailKey, setDetailKey] = useState(null);
 
   async function loadAll() {
     setLoading(true);
@@ -411,11 +451,11 @@ export default function UserDashboard() {
                     id="file"
                     type="file"
                     className="dash-input"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png"
+                    accept=".pdf,.doc,.docx"
                     onChange={(e) => setFile(e.target.files?.[0] || null)}
                   />
                   <p className="cell-muted" style={{ marginTop: '0.35rem' }}>
-                    PDF, Word, Excel, PowerPoint, or image — up to 20MB.
+                    PDF or Word document — up to 20&nbsp;MB.
                   </p>
                 </div>
               </>
@@ -472,28 +512,46 @@ export default function UserDashboard() {
               )}
               {submissions
                 .filter((s) => statusFilter === 'all' || s.status === statusFilter)
-                .map((s) => (
-                <tr key={`${s.kind}-${s.id}`}>
-                  <td className="cell-mono">{s.ref}</td>
-                  <td>{s.type}{s.kind === 'document' ? ' (doc)' : ''}</td>
-                  <td className="cell-muted">{new Date(s.submitted_at).toLocaleDateString()}</td>
-                  <td><StatusBadge status={s.status} /></td>
-                  <td>
-                    <div className="btn-row">
-                      {s.kind === 'document' && (
-                        <button className="btn btn--outline btn-sm" onClick={() => handleDownload(s)}>
-                          Download
-                        </button>
+                .map((s) => {
+                  const rowKey = `${s.kind}-${s.id}`;
+                  return (
+                    <Fragment key={rowKey}>
+                      <tr>
+                        <td className="cell-mono">{s.ref}</td>
+                        <td>{s.type}{s.kind === 'document' ? ' (doc)' : ''}</td>
+                        <td className="cell-muted">{new Date(s.submitted_at).toLocaleDateString()}</td>
+                        <td><StatusBadge status={s.status} /></td>
+                        <td>
+                          <div className="btn-row">
+                            <button
+                              className="btn btn--outline btn-sm"
+                              onClick={() => setDetailKey((k) => (k === rowKey ? null : rowKey))}
+                            >
+                              {detailKey === rowKey ? 'Hide' : 'Details'}
+                            </button>
+                            {s.kind === 'document' && (
+                              <button className="btn btn--outline btn-sm" onClick={() => handleDownload(s)}>
+                                Download
+                              </button>
+                            )}
+                            {s.status === 'revision' && (
+                              <button className="btn btn--outline btn-sm" onClick={() => setResubmitTarget(s)}>
+                                Resubmit
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      {detailKey === rowKey && (
+                        <tr>
+                          <td colSpan={5} style={{ background: 'var(--content-bg, #f8fafc)' }}>
+                            <SubmissionDetail s={s} />
+                          </td>
+                        </tr>
                       )}
-                      {s.status === 'revision' && (
-                        <button className="btn btn--outline btn-sm" onClick={() => setResubmitTarget(s)}>
-                          Resubmit
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </Fragment>
+                  );
+                })}
             </tbody>
           </table>
         )}

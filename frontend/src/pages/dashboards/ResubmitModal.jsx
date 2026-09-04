@@ -186,11 +186,11 @@ export default function ResubmitModal({ submission, requestTypes, categories, on
                 id="resubmit-file"
                 type="file"
                 className="dash-input"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png"
+                accept=".pdf,.doc,.docx"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
               <p className="cell-muted" style={{ marginTop: '0.3rem' }}>
-                Leave blank to keep the file you already uploaded.
+                PDF or Word. Leave blank to keep the file you already uploaded.
               </p>
             </div>
           </>
