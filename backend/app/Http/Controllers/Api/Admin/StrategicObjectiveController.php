@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\Document;
 use App\Models\StrategicObjective;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -18,9 +19,25 @@ class StrategicObjectiveController extends Controller
 {
     public function index()
     {
+        $flat = StrategicObjective::withCount('documents')->orderBy('code')->get();
+
         return response()->json([
+            'summary' => [
+                'goals' => $flat->whereNull('parent_id')->count(),
+                'sub_objectives' => $flat->whereNotNull('parent_id')->count(),
+                'active' => $flat->where('is_active', true)->count(),
+                'inactive' => $flat->where('is_active', false)->count(),
+                'linked_documents' => Document::whereHas('objectives')->count(),
+            ],
             'tree' => StrategicObjective::tree()->map(fn ($g) => $this->node($g)),
-            'flat' => StrategicObjective::orderBy('code')->get(['id', 'code', 'title', 'parent_id', 'is_active']),
+            'flat' => $flat->map(fn ($o) => [
+                'id' => $o->id,
+                'code' => $o->code,
+                'title' => $o->title,
+                'parent_id' => $o->parent_id,
+                'is_active' => $o->is_active,
+                'document_count' => $o->documents_count,
+            ]),
         ]);
     }
 
@@ -76,6 +93,7 @@ class StrategicObjectiveController extends Controller
             'code' => $o->code,
             'title' => $o->title,
             'is_active' => $o->is_active,
+            'document_count' => $o->documents_count ?? 0,
             'children' => $o->children->map(fn ($c) => $this->node($c)),
         ];
     }

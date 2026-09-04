@@ -49,10 +49,16 @@ class StrategicObjective extends Model
         return "{$this->code} — {$this->title}";
     }
 
-    /** The active tree, roots first, each with its children eager-loaded. */
+    /**
+     * The tree, roots first, every node carrying its linked-document
+     * count (`documents_count`) and its children two levels deep.
+     */
     public static function tree(): Collection
     {
-        return static::with('children.children')
+        $withCounts = fn ($q) => $q->withCount('documents')->orderBy('sort_order')->orderBy('code');
+
+        return static::withCount('documents')
+            ->with(['children' => fn ($q) => $withCounts($q)->with(['children' => $withCounts])])
             ->whereNull('parent_id')
             ->orderBy('sort_order')->orderBy('code')
             ->get();

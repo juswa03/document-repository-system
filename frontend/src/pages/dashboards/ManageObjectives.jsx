@@ -6,11 +6,13 @@ import './dashboards.css';
 
 /**
  * Manage the strategic-objective tree (Phase 11 / DR objective linkage).
- * Enter the real goals and sub-objectives from the strategic plan here;
- * documents are then linked to them during review.
+ * A system admin enters the goals and sub-objectives from the OSM's
+ * strategic plan; reviewers then link each document to the objectives it
+ * supports, and those links drive the repository's objective filter and
+ * the compliance reports.
  */
 export default function ManageObjectives() {
-  const [data, setData] = useState({ tree: [], flat: [] });
+  const [data, setData] = useState({ summary: null, tree: [], flat: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null); // { mode, item?, parentId? }
@@ -34,9 +36,12 @@ export default function ManageObjectives() {
   }, [load]);
 
   async function remove(node) {
-    if (!window.confirm(`Delete ${node.code} — ${node.title}? Linked documents will be unlinked.`)) {
-      return;
-    }
+    const warn =
+      node.document_count > 0
+        ? `Delete ${node.code} — ${node.title}?\n${node.document_count} document(s) will be unlinked from it.`
+        : `Delete ${node.code} — ${node.title}?`;
+    if (!window.confirm(warn)) return;
+
     setBusyId(node.id);
     setError('');
     try {
@@ -49,11 +54,14 @@ export default function ManageObjectives() {
     }
   }
 
+  const flatFor = (node) => data.flat.find((f) => f.id === node.id) || node;
+
   function Row({ node, depth }) {
     return (
       <>
         <tr>
-          <td className="cell-mono" style={{ paddingLeft: `${0.8 + depth * 1.4}rem` }}>
+          <td className="cell-mono" style={{ paddingLeft: `${0.8 + depth * 1.5}rem` }}>
+            {depth > 0 && <span className="cell-muted">└ </span>}
             {node.code}
           </td>
           <td>
@@ -63,6 +71,9 @@ export default function ManageObjectives() {
                 inactive
               </span>
             )}
+          </td>
+          <td className="cell-muted" style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+            {node.document_count || 0}
           </td>
           <td>
             <div className="btn-row">
@@ -97,22 +108,58 @@ export default function ManageObjectives() {
     );
   }
 
-  // The tree nodes don't carry parent_id; look it up from the flat list.
-  function flatFor(node) {
-    return data.flat.find((f) => f.id === node.id) || node;
-  }
+  const s = data.summary;
+  const tiles = [
+    { label: 'Goals', value: s?.goals },
+    { label: 'Sub-objectives', value: s?.sub_objectives },
+    { label: 'Active', value: s?.active },
+    { label: 'Documents linked', value: s?.linked_documents },
+  ];
 
   return (
     <DashboardShell eyebrow="System / super admin" title="Strategic objectives">
       {error && <p className="error-banner">{error}</p>}
 
       <section className="panel">
+        <p className="prose" style={{ maxWidth: '68ch', color: 'var(--text-secondary)' }}>
+          These are the goals and sub-objectives from the OSM strategic plan. During review, each
+          document is linked to the objectives it supports; the repository can then be filtered by
+          objective, and the compliance reports (Objective coverage, RPT-06/07) are built from
+          these links. Set the codes to match the numbering in the plan itself.
+        </p>
+        <p
+          className="prose"
+          style={{
+            maxWidth: '68ch',
+            fontSize: '0.85rem',
+            color: 'var(--text-label)',
+            borderLeft: '2px solid var(--border-light)',
+            paddingLeft: '0.8rem',
+            marginTop: '0.9rem',
+          }}
+        >
+          The tree below is a <strong>placeholder</strong> until the parent objectives document is
+          supplied (decision 0.8). Replace it with the approved goals — nothing else in the system
+          depends on these specific codes.
+        </p>
+      </section>
+
+      <div className="stat-grid">
+        {tiles.map((t) => (
+          <div className="stat-card" key={t.label}>
+            <div className="stat-value">{t.value ?? '—'}</div>
+            <div className="stat-label">{t.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <section className="panel">
         <div className="panel-header">
           <div>
             <h2 className="panel-title">Objective tree</h2>
             <p className="panel-subtitle">
-              The goals and sub-objectives from the strategic plan. Documents are linked to these
-              during review; the repository can be filtered by objective.
+              Goals are top level; add sub-objectives beneath them. A goal with linked documents can
+              still be edited or removed — its documents are simply unlinked.
             </p>
           </div>
           <div className="btn-row">
@@ -131,14 +178,16 @@ export default function ManageObjectives() {
                 <tr>
                   <th>Code</th>
                   <th>Title</th>
+                  <th style={{ textAlign: 'right' }}>Documents</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {data.tree.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="empty-row">
-                      No objectives yet — add the goals from the strategic plan.
+                    <td colSpan={4} className="empty-row">
+                      No objectives yet. Add the goals from the strategic plan with “Add goal”, then
+                      add sub-objectives beneath each one.
                     </td>
                   </tr>
                 )}
