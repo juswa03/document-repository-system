@@ -22,7 +22,7 @@ class AiSettingController extends Controller
 {
     private const EDITABLE = [
         'ai_enabled', 'ai_provider', 'ai_model',
-        'ai_monthly_cap_usd', 'ai_confidence_threshold',
+        'ai_monthly_cap_usd', 'ai_confidence_threshold', 'ai_capabilities',
     ];
 
     public function show(): mixed
@@ -42,10 +42,21 @@ class AiSettingController extends Controller
             'ai_model' => ['sometimes', 'string', Rule::in($models)],
             'ai_monthly_cap_usd' => ['sometimes', 'numeric', 'min:0', 'max:100000'],
             'ai_confidence_threshold' => ['sometimes', 'numeric', 'min:0', 'max:1'],
+            'ai_capabilities' => ['sometimes', 'array'],
+            'ai_capabilities.*' => ['string', Rule::in(array_keys(config('ai.capabilities')))],
         ], [
             'ai_model.in' => 'That model is not offered by the selected provider.',
             'ai_provider.in' => 'Unknown provider.',
+            'ai_capabilities.*.in' => 'Unknown AI capability.',
         ]);
+
+        if (array_key_exists('ai_capabilities', $data)) {
+            // Store in the canonical config order, de-duplicated.
+            $data['ai_capabilities'] = array_values(array_intersect(
+                array_keys(config('ai.capabilities')),
+                $data['ai_capabilities'],
+            ));
+        }
 
         if (array_key_exists('ai_enabled', $data)) {
             $data['ai_enabled'] = filter_var($data['ai_enabled'], FILTER_VALIDATE_BOOLEAN);
@@ -115,6 +126,11 @@ class AiSettingController extends Controller
             'available_models' => $modelsFor($settings->ai_provider),
             'models_by_provider' => collect(config('ai.providers'))
                 ->mapWithKeys(fn ($_, $p) => [$p => $modelsFor($p)]),
+            // null in the DB means every capability is on.
+            'ai_capabilities' => $settings->ai_capabilities ?? array_keys(config('ai.capabilities')),
+            'ai_capability_options' => collect(config('ai.capabilities'))
+                ->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])
+                ->values(),
         ];
     }
 }

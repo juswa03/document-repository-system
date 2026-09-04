@@ -30,6 +30,7 @@ export default function AiSettings() {
         ai_model: data.ai_model,
         ai_monthly_cap_usd: data.ai_monthly_cap_usd,
         ai_confidence_threshold: data.ai_confidence_threshold,
+        ai_capabilities: data.ai_capabilities || [],
       });
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not load AI settings.');
@@ -58,6 +59,18 @@ export default function AiSettings() {
         }
       }
       return next;
+    });
+  }
+
+  function toggleCapability(key) {
+    setForm((f) => {
+      const wanted = new Set(f.ai_capabilities);
+      wanted.has(key) ? wanted.delete(key) : wanted.add(key);
+      // Keep the canonical config order so the dirty check is stable.
+      const ordered = (data?.ai_capability_options || [])
+        .map((o) => o.key)
+        .filter((k) => wanted.has(k));
+      return { ...f, ai_capabilities: ordered };
     });
   }
 
@@ -95,9 +108,14 @@ export default function AiSettings() {
   const dirty =
     form &&
     data &&
-    ['ai_enabled', 'ai_provider', 'ai_model', 'ai_monthly_cap_usd', 'ai_confidence_threshold'].some(
-      (k) => String(form[k]) !== String(data[k])
-    );
+    [
+      'ai_enabled',
+      'ai_provider',
+      'ai_model',
+      'ai_monthly_cap_usd',
+      'ai_confidence_threshold',
+      'ai_capabilities',
+    ].some((k) => String(form[k]) !== String(data[k]));
 
   const statusText = !data
     ? ''
@@ -257,6 +275,37 @@ export default function AiSettings() {
                 Suggestions below this confidence are still stored but flagged as low-confidence.
               </p>
             </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-header">
+              <div>
+                <h2 className="panel-title">Capabilities</h2>
+                <p className="panel-subtitle">
+                  Which analyses run on each submitted document. Turn any off to skip its provider
+                  call. Near-duplicate detection is deterministic and free.
+                </p>
+              </div>
+            </div>
+
+            {(data.ai_capability_options || []).map((opt) => (
+              <div className="toggle-row" key={opt.key}>
+                <div className="toggle-copy">
+                  <p style={{ color: 'var(--text-label)' }}>{opt.label}</p>
+                  <span className="cell-mono" style={{ color: 'var(--text-value)' }}>
+                    {opt.key}
+                  </span>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={form.ai_capabilities.includes(opt.key)}
+                    onChange={() => toggleCapability(opt.key)}
+                  />
+                  <span className="toggle-slider" />
+                </label>
+              </div>
+            ))}
           </section>
 
           <div className="btn-row">

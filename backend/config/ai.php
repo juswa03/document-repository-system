@@ -35,6 +35,25 @@ return [
     // recommendation.
     'confidence_threshold' => (float) env('AI_CONFIDENCE_THRESHOLD', 0.6),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Capabilities (AI-01…09)
+    |--------------------------------------------------------------------------
+    | Which analyses the layer runs. A system admin can switch any of them
+    | off individually (system_settings.ai_capabilities — null means "all
+    | on"). `near_duplicate` is deterministic and free; the rest each cost
+    | one provider call per document.
+    */
+    'capabilities' => [
+        'classification' => 'Category suggestion',
+        'completeness' => 'Completeness assessment',
+        'metadata' => 'Metadata extraction',
+        'confidentiality' => 'Access-level / confidentiality check',
+        'summary' => 'Document summary',
+        'near_duplicate' => 'Near-duplicate detection (no provider cost)',
+        'search' => 'Natural-language search parsing',
+    ],
+
     'providers' => [
 
         'anthropic' => [

@@ -34,6 +34,7 @@ class AiSettingsTest extends ConformanceTestCase
                 'ai_enabled', 'ai_provider', 'ai_model', 'ai_monthly_cap_usd',
                 'ai_confidence_threshold', 'key_present', 'operational',
                 'providers', 'available_models',
+                'ai_capabilities', 'ai_capability_options' => [['key', 'label']],
             ])
             ->assertJsonPath('key_present', true)
             ->getContent();

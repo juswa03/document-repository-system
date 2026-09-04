@@ -43,9 +43,12 @@ class AnalyzeDocument implements ShouldQueue
             ->where('status', 'pending')
             ->delete();
 
+        $settings = SystemSetting::current();
+
         // Deterministic near-duplicate over the extracted text — no
         // provider call, no cost, runs regardless of the AI layer.
-        if (($nearDuplicate = $this->nearDuplicate()) !== null) {
+        if ($settings->aiCapabilityEnabled('near_duplicate')
+            && ($nearDuplicate = $this->nearDuplicate()) !== null) {
             $this->persist($nearDuplicate);
         }
 
@@ -53,7 +56,7 @@ class AnalyzeDocument implements ShouldQueue
             return;
         }
 
-        if (DocumentAiSuggestion::spendThisMonth() >= (float) SystemSetting::current()->ai_monthly_cap_usd) {
+        if (DocumentAiSuggestion::spendThisMonth() >= (float) $settings->ai_monthly_cap_usd) {
             AuditLog::record(
                 null,
                 'ai_spend_cap_reached',
@@ -67,14 +70,19 @@ class AnalyzeDocument implements ShouldQueue
 
         $context = DocumentContext::fromDocument($this->document);
         $categories = Category::orderBy('category_name')->pluck('category_name')->all();
+        $on = fn (string $key) => $settings->aiCapabilityEnabled($key);
 
         $provided = array_filter([
-            $provider->classify($context, $categories),
-            $provider->assessCompleteness($context),
-            $provider->extractMetadata($context),
-            $provider->checkConfidentiality($context, Document::ACCESS_LEVELS),
-            $provider->summarize($context, $this->document->extracted_text),
+            $on('classification') ? $provider->classify($context, $categories) : null,
+            $on('completeness') ? $provider->assessCompleteness($context) : null,
+            $on('metadata') ? $provider->extractMetadata($context) : null,
+            $on('confidentiality') ? $provider->checkConfidentiality($context, Document::ACCESS_LEVELS) : null,
+            $on('summary') ? $provider->summarize($context, $this->document->extracted_text) : null,
         ]);
+
+        if ($provided === []) {
+            return;
+        }
 
         DocumentStageEvent::record($this->document, DocumentStageEvent::STAGE_AI_ANALYSED);
 

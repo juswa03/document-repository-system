@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\Office;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 
 class DocumentRepositoryController extends Controller
@@ -50,7 +51,9 @@ class DocumentRepositoryController extends Controller
         $categories = Category::orderBy('category_name')->pluck('category_name');
         $offices = Office::orderBy('office_name')->pluck('office_name');
 
-        $raw = $ai->interpretSearch($query, $categories->all(), $offices->all());
+        $raw = SystemSetting::current()->aiCapabilityEnabled('search')
+            ? $ai->interpretSearch($query, $categories->all(), $offices->all())
+            : null;
         $usedAi = $raw !== null;
 
         $filters = ['q' => $raw['q'] ?? $query];

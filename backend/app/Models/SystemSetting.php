@@ -15,6 +15,7 @@ class SystemSetting extends Model
         'ai_model',
         'ai_monthly_cap_usd',
         'ai_confidence_threshold',
+        'ai_capabilities',
     ];
 
     protected function casts(): array
@@ -25,7 +26,18 @@ class SystemSetting extends Model
             'ai_enabled' => 'boolean',
             'ai_monthly_cap_usd' => 'float',
             'ai_confidence_threshold' => 'float',
+            'ai_capabilities' => 'array',
         ];
+    }
+
+    /**
+     * Is the given AI capability (config/ai.php `capabilities` key) on?
+     * A null `ai_capabilities` means every capability is enabled.
+     */
+    public function aiCapabilityEnabled(string $key): bool
+    {
+        return $this->ai_capabilities === null
+            || in_array($key, $this->ai_capabilities, true);
     }
 
     /**

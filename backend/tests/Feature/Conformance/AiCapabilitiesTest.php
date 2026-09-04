@@ -102,6 +102,23 @@ class AiCapabilitiesTest extends ConformanceTestCase
         $this->assertGreaterThan(0, $row->cost_usd);          // priced from tokens
     }
 
+    public function test_a_disabled_capability_is_skipped(): void
+    {
+        SystemSetting::current()->update(['ai_capabilities' => ['completeness', 'near_duplicate']]);
+
+        $document = $this->createDocument();
+        $category = Category::query()->value('category_name');
+
+        $fake = new FakeAiProvider;
+        $fake->classification = $this->classification($category);
+        $fake->completeness = $this->completeness();
+
+        $this->runJobWith($fake, $document);
+
+        $this->assertSame(0, $document->aiSuggestions()->where('kind', 'classification')->count());
+        $this->assertSame(1, $document->aiSuggestions()->where('kind', 'completeness')->count());
+    }
+
     public function test_re_running_the_job_replaces_still_pending_suggestions(): void
     {
         $document = $this->createDocument();
