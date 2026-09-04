@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             LookupDataSeeder::class,
             RoleUserSeeder::class,
             RequiredDocumentSeeder::class,
+            StrategicObjectiveSeeder::class,
         ]);
     }
 }

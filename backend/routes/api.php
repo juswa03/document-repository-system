@@ -9,10 +9,12 @@ use App\Http\Controllers\Api\Admin\GovernanceReviewController;
 use App\Http\Controllers\Api\Admin\OfficeController;
 use App\Http\Controllers\Api\Admin\RequestTypeController;
 use App\Http\Controllers\Api\Admin\RequiredDocumentController;
+use App\Http\Controllers\Api\Admin\StrategicObjectiveController;
 use App\Http\Controllers\Api\Admin\SystemSettingController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AiSuggestionController;
 use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\DocumentObjectiveController;
 use App\Http\Controllers\Api\DocumentRepositoryController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReportController;
@@ -87,6 +89,12 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         // Governance review cadence (BR-07, Phase 7.2).
         Route::get('/governance-reviews', [GovernanceReviewController::class, 'index']);
         Route::post('/governance-reviews', [GovernanceReviewController::class, 'store']);
+
+        // Strategic-objective tree (Phase 11 / DR objective linkage).
+        Route::get('/strategic-objectives', [StrategicObjectiveController::class, 'index']);
+        Route::post('/strategic-objectives', [StrategicObjectiveController::class, 'store']);
+        Route::patch('/strategic-objectives/{strategicObjective}', [StrategicObjectiveController::class, 'update']);
+        Route::delete('/strategic-objectives/{strategicObjective}', [StrategicObjectiveController::class, 'destroy']);
     });
 
     // Document repository search (objective 1.3) — cross-office, so
@@ -116,6 +124,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/documents/{document}/access-grants', [AccessGrantController::class, 'index']);
         Route::post('/documents/{document}/access-grants', [AccessGrantController::class, 'store']);
         Route::delete('/access-grants/{accessGrant}', [AccessGrantController::class, 'destroy']);
+
+        // Strategic-objective links on a document (Phase 11).
+        Route::get('/documents/{document}/objectives', [DocumentObjectiveController::class, 'index']);
+        Route::put('/documents/{document}/objectives', [DocumentObjectiveController::class, 'sync']);
 
         // AI suggestions (§F) — review, then accept (applies) or dismiss.
         Route::get('/documents/{document}/ai-suggestions', [AiSuggestionController::class, 'index']);

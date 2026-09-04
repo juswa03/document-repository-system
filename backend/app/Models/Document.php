@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
@@ -112,6 +113,9 @@ class Document extends Model
             ->when($filters['office_id'] ?? null, fn (Builder $q, $v) => $q->where('office_id', $v))
             ->when($filters['status'] ?? null, fn (Builder $q, $v) => $q->where('status', $v))
             ->when($filters['retention_status'] ?? null, fn (Builder $q, $v) => $q->where('retention_status', $v))
+            ->when($filters['objective_id'] ?? null, fn (Builder $q, $v) => $q->whereHas(
+                'objectives', fn (Builder $oq) => $oq->where('strategic_objectives.id', $v),
+            ))
             ->when($filters['date_from'] ?? null, fn (Builder $q, $v) => $q->whereDate('submitted_at', '>=', $v))
             ->when($filters['date_to'] ?? null, fn (Builder $q, $v) => $q->whereDate('submitted_at', '<=', $v));
     }
@@ -255,6 +259,13 @@ class Document extends Model
     public function accessGrants(): HasMany
     {
         return $this->hasMany(AccessGrant::class);
+    }
+
+    /** Strategic objectives this document supports (DR objective linkage, Phase 11). */
+    public function objectives(): BelongsToMany
+    {
+        return $this->belongsToMany(StrategicObjective::class, 'document_strategic_objective')
+            ->orderBy('code');
     }
 
     /**

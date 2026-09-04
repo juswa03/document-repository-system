@@ -24,6 +24,7 @@ class DocumentRepositoryController extends Controller
             'q' => ['nullable', 'string', 'max:200'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'office_id' => ['nullable', 'exists:offices,id'],
+            'objective_id' => ['nullable', 'exists:strategic_objectives,id'],
             'status' => ['nullable', 'in:pending,approved,rejected,revision'],
             'retention_status' => ['nullable', 'in:active,superseded,archived,disposed'],
             'date_from' => ['nullable', 'date'],
@@ -81,7 +82,7 @@ class DocumentRepositoryController extends Controller
     /** Shared query: access scope + filters + relevance ordering when searching. */
     private function run(Request $request, array $filters)
     {
-        $documents = Document::with(['category', 'office', 'uploader'])
+        $documents = Document::with(['category', 'office', 'uploader', 'objectives'])
             ->accessibleBy($request->user())
             ->filter($filters)
             ->when(
@@ -104,6 +105,7 @@ class DocumentRepositoryController extends Controller
             'uploader' => $d->uploader?->full_name,
             'status' => $d->status,
             'retention_status' => $d->retention_status,
+            'objectives' => $d->objectives->pluck('code'),
             'version_number' => $d->version_number,
             'submitted_at' => $d->submitted_at,
         ]);
