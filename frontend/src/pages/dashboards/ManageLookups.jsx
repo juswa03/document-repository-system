@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import LookupFormModal from './LookupFormModal';
 import api from '../../lib/api';
@@ -46,12 +46,23 @@ const TABS = {
 export default function ManageLookups() {
   const [activeTab, setActiveTab] = useState('offices');
   const [items, setItems] = useState([]);
+  const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null);
   const [busyId, setBusyId] = useState(null);
 
   const config = TABS[activeTab];
+
+  const visible = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return items;
+    return items.filter(
+      (i) =>
+        String(i[config.nameField] || '').toLowerCase().includes(term) ||
+        String(i[config.codeField] || '').toLowerCase().includes(term)
+    );
+  }, [items, q, config]);
 
   async function load() {
     setLoading(true);
@@ -80,6 +91,7 @@ export default function ManageLookups() {
   }
 
   useEffect(() => {
+    setQ('');
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -114,6 +126,21 @@ export default function ManageLookups() {
           </button>
         </div>
 
+        <div className="filter-bar">
+          <div className="filter-field filter-field--grow">
+            <label htmlFor="lookup-search" style={{ color: 'var(--text-label)' }}>
+              Search
+            </label>
+            <input
+              id="lookup-search"
+              type="search"
+              placeholder="Name or code"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+        </div>
+
         {loading ? (
           <p className="loading-text">Loading…</p>
         ) : (
@@ -127,12 +154,14 @@ export default function ManageLookups() {
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 && (
+              {visible.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="empty-row">Nothing here yet.</td>
+                  <td colSpan={4} className="empty-row">
+                    {q.trim() ? 'Nothing matches that search.' : 'Nothing here yet.'}
+                  </td>
                 </tr>
               )}
-              {items.map((item) => (
+              {visible.map((item) => (
                 <tr key={item.id} style={item.is_active === false ? { opacity: 0.55 } : undefined}>
                   <td>{item[config.nameField]}</td>
                   <td className="cell-mono">{item[config.codeField]}</td>

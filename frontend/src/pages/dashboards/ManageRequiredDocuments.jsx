@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardShell from './DashboardShell';
+import Modal from '../../components/Modal';
 import api from '../../lib/api';
 import './dashboards.css';
 
@@ -28,6 +29,8 @@ export default function ManageRequiredDocuments() {
   const [offices, setOffices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState(null); // { ...fields, id? }
+  const [saving, setSaving] = useState(false);
+  const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -56,9 +59,25 @@ export default function ManageRequiredDocuments() {
     load();
   }, []);
 
+  const officeName = (id) => offices.find((o) => o.id === id)?.office_name || 'All offices';
+  const categoryName = (id) => categories.find((c) => c.id === id)?.category_name || '—';
+
+  const visible = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter(
+      (row) =>
+        row.name.toLowerCase().includes(term) ||
+        officeName(row.office_id).toLowerCase().includes(term) ||
+        categoryName(row.category_id).toLowerCase().includes(term)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, q, offices, categories]);
+
   async function save(e) {
     e.preventDefault();
     setError('');
+    setSaving(true);
     const payload = {
       ...form,
       office_id: form.office_id || null,
@@ -82,6 +101,8 @@ export default function ManageRequiredDocuments() {
           Object.values(err?.response?.data?.errors || {})[0]?.[0] ||
           'Could not save.'
       );
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -94,9 +115,6 @@ export default function ManageRequiredDocuments() {
       setError(err?.response?.data?.message || 'Could not remove that row.');
     }
   }
-
-  const officeName = (id) => offices.find((o) => o.id === id)?.office_name || 'All offices';
-  const categoryName = (id) => categories.find((c) => c.id === id)?.category_name || '—';
 
   return (
     <DashboardShell eyebrow="System / super admin" title="Required documents">
@@ -113,6 +131,21 @@ export default function ManageRequiredDocuments() {
           <button className="btn btn--primary btn-sm" onClick={() => setForm({ ...BLANK })}>
             + New requirement
           </button>
+        </div>
+
+        <div className="filter-bar">
+          <div className="filter-field filter-field--grow">
+            <label htmlFor="rd-search" style={{ color: 'var(--text-label)' }}>
+              Search
+            </label>
+            <input
+              id="rd-search"
+              type="search"
+              placeholder="Name, office or category"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -132,10 +165,14 @@ export default function ManageRequiredDocuments() {
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 && (
-                <tr><td colSpan={8} className="empty-row">No requirements yet.</td></tr>
+              {visible.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="empty-row">
+                    {q.trim() ? 'No requirements match that search.' : 'No requirements yet.'}
+                  </td>
+                </tr>
               )}
-              {rows.map((row) => (
+              {visible.map((row) => (
                 <tr key={row.id}>
                   <td>{row.name}</td>
                   <td>{officeName(row.office_id)}</td>
@@ -162,12 +199,11 @@ export default function ManageRequiredDocuments() {
       </section>
 
       {form && (
-        <section className="panel">
-          <div className="panel-header">
-            <div>
-              <h2 className="panel-title">{form.id ? 'Edit requirement' : 'New requirement'}</h2>
-            </div>
-          </div>
+        <Modal
+          title={form.id ? 'Edit requirement' : 'New requirement'}
+          onClose={() => setForm(null)}
+          width={620}
+        >
           <form onSubmit={save}>
             <div className="dash-row">
               <div className="dash-field">
@@ -241,11 +277,13 @@ export default function ManageRequiredDocuments() {
                 onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </div>
             <div className="btn-row">
-              <button type="submit" className="btn btn--primary">Save</button>
+              <button type="submit" className="btn btn--primary" disabled={saving}>
+                {saving ? 'Saving…' : 'Save'}
+              </button>
               <button type="button" className="btn btn--outline" onClick={() => setForm(null)}>Cancel</button>
             </div>
           </form>
-        </section>
+        </Modal>
       )}
     </DashboardShell>
   );
