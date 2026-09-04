@@ -74,7 +74,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--secondary);
-  color: var(--text-secondary);
+  color: var(--primary);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }

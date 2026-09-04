@@ -10,7 +10,7 @@ export default function Modal({ title, onClose, children, width = 440 }) {
         aria-label={title}
       >
         <div className="modal-header">
-          <h2 style={{ color: 'var(--primary)' }}>{title}</h2>
+          <h2>{title}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>

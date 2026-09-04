@@ -1,21 +1,4 @@
-:root {
-  --border: #e2e8f0;
-  --border-light: #c6d3f1;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --sidebar-bg: #055eb7;   /* light blue-gray */
-  --header-bg: #055eb7;    /* same as sidebar */
-  --content-bg: #ffffff;
-  --card-bg: #ffffff;
-  --text-primary: #eaecf0; /* dark navy */
-  --text-secondary: #dfe1e4;
-  --text-label: #144686;
-  --text-value: #5a6b82;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
-  --radius: 10px;
-  --radius-sm: 8px;
-}
+@import './styles/tokens.css';
 
 * {
   box-sizing: border-box;
@@ -27,10 +10,11 @@ html, body {
 }
 
 body {
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   color: var(--ink);
   background: var(--paper);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button {

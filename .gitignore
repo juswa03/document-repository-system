@@ -52,6 +52,13 @@ backend/public/storage
 **/.git.old/
 _git_backup_*/
 
+# Design-skill reference material dropped into the tree while styling —
+# not part of the application
+/taste-skill-main/
+/frontend-design-skill.md
+/pavicon.png
+/src/
+
 # IDE / editor
 .idea/
 .vscode/

@@ -1,0 +1,116 @@
+/* ============================================================================
+   Design tokens — single source of truth for the whole frontend.
+   Imported once from src/index.css. Every CSS custom property the app
+   references is defined here; components read these, never raw hex.
+
+   Radius scale is deliberately small:
+     --radius-sm  controls (inputs, buttons, badges, chips)
+     --radius     cards / panels
+     --radius-lg  modal + dropdown outer shells
+     --radius-full  ONLY status pills and avatars
+   ========================================================================== */
+
+:root {
+  /* ---- Type ------------------------------------------------------------- */
+  --font-sans: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+    monospace;
+  --font-body: var(--font-sans);
+  --font-display: var(--font-sans); /* display weight comes from font-weight */
+
+  /* ---- Neutrals — one cool-gray family -------------------------------- */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+
+  /* ---- Blue — desaturated, locked to one scale ----------------------- */
+  --primary: #2b5cab;         /* actions */
+  --primary-hover: #234a89;
+  --primary-soft: #e8eef8;    /* focus ring bg, active-nav tint */
+  --primary-strong: #1f3f70;  /* structural: sidebar + header */
+
+  /* ---- Surfaces / ink / lines --------------------------------------- */
+  --paper: #ffffff;
+  --paper-raised: #ffffff;
+  --paper-sunken: var(--gray-50);
+  --ink: var(--gray-900);
+  --ink-soft: var(--gray-500);
+  --line: var(--gray-200);
+  --line-soft: var(--gray-100);
+
+  /* ---- Radius ------------------------------------------------------- */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  /* ---- Shadows — tinted to slate, not pure black ------------------- */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.14);
+
+  /* ---- Status ----------------------------------------------------- */
+  --danger: #c0362c;
+  --danger-soft: #fdecea;
+  --success: #1f7a44;
+  --success-soft: #e6f4ec;
+  --warning: #b26b00;
+  --warning-soft: #fbf0dd;
+  --seal: var(--success);
+  --seal-deep: #155e34;
+
+  /* ---- Legacy aliases still referenced by components -------------- */
+  --content-bg: var(--paper);
+  --card-bg: var(--paper);
+  --sidebar-bg: var(--primary-strong);
+  --header-bg: var(--primary-strong);
+  --border: var(--line);
+  --border-light: var(--line-soft);
+  --secondary: var(--gray-100);
+  --text-primary: var(--ink);
+  --text-secondary: var(--gray-500);
+  --text-label: var(--gray-600);
+  --text-value: var(--gray-600);
+  --text-muted: var(--gray-400);
+  --text-input: var(--ink);
+  --value-soft: var(--gray-50);
+}
+
+/* ----------------------------------------------------------------------------
+   Dark structural surfaces re-declare the semantic tokens so every
+   descendant var(--text-primary) / var(--line) / ... resolves to a light
+   value automatically — no per-rule overrides needed in the component CSS.
+   -------------------------------------------------------------------------- */
+.sidebar,
+.page-header,
+.login-panel--ink {
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.82);
+  --text-muted: rgba(255, 255, 255, 0.60);
+  --text-label: rgba(255, 255, 255, 0.72);
+  --line: rgba(255, 255, 255, 0.14);
+  --border: rgba(255, 255, 255, 0.14);
+  --ink: #ffffff;
+  --ink-soft: rgba(255, 255, 255, 0.72);
+}
+
+/* The notification popover is a white card that lives inside the dark
+   .page-header — reset it back to light-surface tokens. */
+.bell-dropdown {
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-500);
+  --text-label: var(--gray-600);
+  --text-value: var(--gray-600);
+  --line: var(--gray-200);
+  --border: var(--gray-200);
+  --ink: var(--gray-900);
+  --ink-soft: var(--gray-500);
+}
