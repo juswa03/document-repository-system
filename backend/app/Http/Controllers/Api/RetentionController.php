@@ -22,6 +22,8 @@ use Illuminate\Http\Request;
  */
 class RetentionController extends Controller
 {
+    private const LIST_CAP = 50;
+
     public function overview(Request $request): mixed
     {
         $counts = Document::query()
@@ -29,29 +31,8 @@ class RetentionController extends Controller
             ->groupBy('retention_status')
             ->pluck('c', 'retention_status');
 
-        $dueForArchival = Document::with('category')->retainable()->get()
-            ->filter->isRetentionDue()
-            ->take(50)
-            ->map(fn (Document $d) => [
-                'id' => $d->id,
-                'ref' => $d->tracking_no,
-                'title' => $d->title,
-                'category' => $d->category?->category_name,
-                'document_date' => $d->document_date?->toDateString(),
-                'retention_due_at' => $d->retentionDueAt()?->toDateString(),
-            ])->values();
-
-        $dueForDisposal = Document::with('category')->archived()->get()
-            ->filter->isDisposalDue()
-            ->take(50)
-            ->map(fn (Document $d) => [
-                'id' => $d->id,
-                'ref' => $d->tracking_no,
-                'title' => $d->title,
-                'category' => $d->category?->category_name,
-                'archived_at' => $d->archived_at?->toDateString(),
-                'disposal_due_at' => $d->disposalDueAt()?->toDateString(),
-            ])->values();
+        $archivalDue = Document::with('category')->retainable()->get()->filter->isRetentionDue()->values();
+        $disposalDue = Document::with('category')->archived()->get()->filter->isDisposalDue()->values();
 
         return response()->json([
             'counts' => [
@@ -60,8 +41,25 @@ class RetentionController extends Controller
                 'archived' => (int) ($counts['archived'] ?? 0),
                 'disposed' => (int) ($counts['disposed'] ?? 0),
             ],
-            'due_for_archival' => $dueForArchival,
-            'due_for_disposal' => $dueForDisposal,
+            'list_cap' => self::LIST_CAP,
+            'due_for_archival_total' => $archivalDue->count(),
+            'due_for_archival' => $archivalDue->take(self::LIST_CAP)->map(fn (Document $d) => [
+                'id' => $d->id,
+                'ref' => $d->tracking_no,
+                'title' => $d->title,
+                'category' => $d->category?->category_name,
+                'document_date' => $d->document_date?->toDateString(),
+                'retention_due_at' => $d->retentionDueAt()?->toDateString(),
+            ])->values(),
+            'due_for_disposal_total' => $disposalDue->count(),
+            'due_for_disposal' => $disposalDue->take(self::LIST_CAP)->map(fn (Document $d) => [
+                'id' => $d->id,
+                'ref' => $d->tracking_no,
+                'title' => $d->title,
+                'category' => $d->category?->category_name,
+                'archived_at' => $d->archived_at?->toDateString(),
+                'disposal_due_at' => $d->disposalDueAt()?->toDateString(),
+            ])->values(),
         ]);
     }
 

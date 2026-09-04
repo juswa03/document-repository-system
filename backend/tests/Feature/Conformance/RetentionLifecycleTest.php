@@ -153,6 +153,12 @@ class RetentionLifecycleTest extends ConformanceTestCase
         $this->assertContains($due->tracking_no, $archivalRefs);
         $this->assertNotContains($notDue->tracking_no, $archivalRefs);
         $this->assertContains($disposeDue->tracking_no, collect($body['due_for_disposal'])->pluck('ref'));
+
+        // The lists are capped; the true totals travel alongside so the UI
+        // can say "showing the first N of M".
+        $this->assertSame(50, $body['list_cap']);
+        $this->assertSame(1, $body['due_for_archival_total']);
+        $this->assertSame(1, $body['due_for_disposal_total']);
     }
 
     public function test_apply_retention_archives_due_documents_only_with_the_flag(): void

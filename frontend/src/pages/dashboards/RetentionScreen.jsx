@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import DashboardShell from './DashboardShell';
+import Modal from '../../components/Modal';
 import api from '../../lib/api';
 import './dashboards.css';
 
@@ -51,6 +52,13 @@ export default function RetentionScreen() {
     { label: 'Archived', value: counts.archived },
     { label: 'Disposed', value: counts.disposed },
   ];
+
+  const capNote = (shown, total) =>
+    data && total > shown ? (
+      <p className="cell-muted" style={{ marginTop: '0.5rem' }}>
+        Showing the first {shown} of {total}. Clear the earliest ones to see the rest.
+      </p>
+    ) : null;
 
   return (
     <DashboardShell eyebrow="OSM admin" title="Records retention">
@@ -121,6 +129,7 @@ export default function RetentionScreen() {
             </tbody>
           </table>
         </div>
+        {capNote(data?.due_for_archival.length || 0, data?.due_for_archival_total || 0)}
       </section>
 
       <section className="panel">
@@ -170,7 +179,10 @@ export default function RetentionScreen() {
                       <button
                         className="btn btn--danger-outline btn-sm"
                         disabled={busyId === d.id}
-                        onClick={() => setDisposing({ id: d.id, ref: d.ref })}
+                        onClick={() => {
+                          setReason('');
+                          setDisposing({ id: d.id, ref: d.ref });
+                        }}
                       >
                         Dispose
                       </button>
@@ -181,42 +193,45 @@ export default function RetentionScreen() {
             </tbody>
           </table>
         </div>
-
-        {disposing && (
-          <div className="inline-form">
-            <div className="dash-field" style={{ marginBottom: '0.6rem' }}>
-              <label className="dash-label" htmlFor="dispose-reason">
-                Disposal reason for {disposing.ref} (kept on the record)
-              </label>
-              <textarea
-                id="dispose-reason"
-                className="dash-textarea"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g. End of the approved retention schedule for FY 2020 minutes."
-              />
-            </div>
-            <div className="btn-row">
-              <button
-                className="btn btn--danger-outline btn-sm"
-                disabled={reason.trim().length < 5 || busyId === disposing.id}
-                onClick={() => act(disposing.id, 'dispose', { reason })}
-              >
-                Confirm disposal
-              </button>
-              <button
-                className="btn btn--outline btn-sm"
-                onClick={() => {
-                  setDisposing(null);
-                  setReason('');
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+        {capNote(data?.due_for_disposal.length || 0, data?.due_for_disposal_total || 0)}
       </section>
+
+      {disposing && (
+        <Modal
+          title={`Dispose of ${disposing.ref}`}
+          onClose={() => setDisposing(null)}
+          width={520}
+        >
+          <p className="cell-muted" style={{ marginTop: 0 }}>
+            Permanent. The file is deleted; a tombstone record with this reason is kept.
+          </p>
+          <div className="dash-field">
+            <label className="dash-label" htmlFor="dispose-reason">
+              Disposal reason
+            </label>
+            <textarea
+              id="dispose-reason"
+              className="dash-textarea"
+              rows={4}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. End of the approved retention schedule for FY 2020 minutes."
+            />
+          </div>
+          <div className="btn-row">
+            <button
+              className="btn btn--danger-outline"
+              disabled={reason.trim().length < 5 || busyId === disposing.id}
+              onClick={() => act(disposing.id, 'dispose', { reason })}
+            >
+              {busyId === disposing.id ? 'Disposing…' : 'Confirm disposal'}
+            </button>
+            <button className="btn btn--outline" onClick={() => setDisposing(null)}>
+              Cancel
+            </button>
+          </div>
+        </Modal>
+      )}
     </DashboardShell>
   );
 }
