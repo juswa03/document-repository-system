@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardShell from './DashboardShell';
+import Modal from '../../components/Modal';
 import Pager from '../../components/Pager';
 import api from '../../lib/api';
 import './dashboards.css';
@@ -23,6 +24,7 @@ export default function Governance() {
   const [error, setError] = useState('');
   const [recording, setRecording] = useState(null); // scope
   const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -44,15 +46,25 @@ export default function Governance() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  async function record(scope) {
+  async function record() {
+    setSaving(true);
+    setError('');
     try {
-      await api.post('/admin/governance-reviews', { scope, notes: notes || undefined });
+      await api.post('/admin/governance-reviews', { scope: recording, notes: notes || undefined });
       setRecording(null);
       setNotes('');
       page === 1 ? load() : setPage(1);
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not record the review.');
+    } finally {
+      setSaving(false);
     }
+  }
+
+  function openRecord(scope) {
+    setRecording(scope);
+    setNotes('');
+    setError('');
   }
 
   return (
@@ -92,24 +104,9 @@ export default function Governance() {
                   </td>
                   <td className="cell-muted">every {s.cadence_months} mo</td>
                   <td>
-                    {recording === s.scope ? (
-                      <div className="inline-form">
-                        <textarea
-                          className="dash-textarea"
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          placeholder="What was reviewed and any changes made (optional)."
-                        />
-                        <div className="btn-row">
-                          <button className="btn btn--primary btn-sm" onClick={() => record(s.scope)}>Save review</button>
-                          <button className="btn btn--outline btn-sm" onClick={() => setRecording(null)}>Cancel</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button className="btn btn--outline btn-sm" onClick={() => { setRecording(s.scope); setNotes(''); }}>
-                        Record review
-                      </button>
-                    )}
+                    <button className="btn btn--outline btn-sm" onClick={() => openRecord(s.scope)}>
+                      Record review
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -149,6 +146,39 @@ export default function Governance() {
         </table>
         <Pager meta={historyMeta} page={page} onPage={setPage} />
       </section>
+
+      {recording && (
+        <Modal
+          title={`Record review — ${SCOPE_LABELS[recording] || recording}`}
+          onClose={() => setRecording(null)}
+          width={520}
+        >
+          <p className="cell-muted" style={{ marginTop: 0 }}>
+            Logs that this scope was reviewed today and resets its next-due date.
+          </p>
+          <div className="dash-field">
+            <label className="dash-label" htmlFor="gov-notes">
+              Notes <span className="cell-muted">(optional)</span>
+            </label>
+            <textarea
+              id="gov-notes"
+              className="dash-textarea"
+              rows={4}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="What was reviewed and any changes made."
+            />
+          </div>
+          <div className="btn-row">
+            <button className="btn btn--primary" onClick={record} disabled={saving}>
+              {saving ? 'Saving…' : 'Save review'}
+            </button>
+            <button className="btn btn--outline" onClick={() => setRecording(null)} disabled={saving}>
+              Cancel
+            </button>
+          </div>
+        </Modal>
+      )}
     </DashboardShell>
   );
 }
