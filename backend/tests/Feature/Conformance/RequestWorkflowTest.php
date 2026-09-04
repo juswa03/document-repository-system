@@ -68,7 +68,7 @@ class RequestWorkflowTest extends ConformanceTestCase
         $id = $this->asUser()->postJson('/api/dashboard/requests', $this->payload())
             ->assertCreated()->json('id');
 
-        $queue = $this->asOsmAdmin()->getJson('/api/osm-admin/queue')->assertOk()->json();
+        $queue = $this->asOsmAdmin()->getJson('/api/osm-admin/queue')->assertOk()->json('data');
         $this->assertContains('request', collect($queue)->pluck('kind')->all());
 
         $this->asOsmAdmin()->postJson("/api/osm-admin/requests/{$id}/assign", [

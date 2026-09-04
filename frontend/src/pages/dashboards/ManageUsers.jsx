@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import UserFormModal from './UserFormModal';
+import Pager from '../../components/Pager';
 import api from '../../lib/api';
 import './dashboards.css';
 
@@ -12,6 +13,8 @@ const ROLE_LABELS = {
 
 export default function ManageUsers() {
   const [users, setUsers] = useState([]);
+  const [meta, setMeta] = useState(null);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
@@ -21,8 +24,9 @@ export default function ManageUsers() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.get('/admin/users');
-      setUsers(data);
+      const { data } = await api.get('/admin/users', { params: { page } });
+      setUsers(data.data);
+      setMeta(data.meta);
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not load users.');
     } finally {
@@ -32,7 +36,8 @@ export default function ManageUsers() {
 
   useEffect(() => {
     loadUsers();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   async function toggleActive(user) {
     setBusyId(user.id);
@@ -108,6 +113,8 @@ export default function ManageUsers() {
             </tbody>
           </table>
         )}
+
+        <Pager meta={meta} page={page} onPage={setPage} />
       </section>
 
       {modal && (

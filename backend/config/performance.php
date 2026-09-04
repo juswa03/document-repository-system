@@ -17,6 +17,10 @@ return [
 
     'iterations' => (int) env('PERF_ITERATIONS', 30),
 
+    // Max rows a report returns to the browser (the CSV export is
+    // uncapped).
+    'report_row_cap' => (int) env('PERF_REPORT_ROW_CAP', 500),
+
     'targets_ms' => [
         'repository_metadata_search' => 400,
         'repository_content_search' => 700,

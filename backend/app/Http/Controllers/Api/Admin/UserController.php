@@ -13,11 +13,17 @@ class UserController extends Controller
     /**
      * GET /api/admin/users
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(
-            User::with('office')->orderBy('full_name')->get()
-        );
+        $query = User::with('office')->orderBy('full_name');
+
+        // ?all=1 — the flat list the overview donut and the audit-log
+        // actor filter need. Default is paginated.
+        if ($request->boolean('all')) {
+            return response()->json($query->get());
+        }
+
+        return response()->json($this->paged($query->paginate(25)->withQueryString()));
     }
 
     /**
@@ -84,7 +90,7 @@ class UserController extends Controller
             AuditLog::record(
                 $request->user()->id,
                 $data['is_active'] ? 'user_reactivated' : 'user_deactivated',
-                ($data['is_active'] ? 'Reactivated' : 'Deactivated') . " user {$user->full_name}.",
+                ($data['is_active'] ? 'Reactivated' : 'Deactivated')." user {$user->full_name}.",
                 User::class,
                 $user->id
             );

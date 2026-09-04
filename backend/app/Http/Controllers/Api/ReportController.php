@@ -8,13 +8,12 @@ use App\Models\Document;
 use App\Reports\Registry;
 use App\Reports\Report;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
-    public function __construct(private readonly Registry $registry)
-    {
-    }
+    public function __construct(private readonly Registry $registry) {}
 
     /**
      * GET /api/reports
@@ -71,6 +70,11 @@ class ReportController extends Controller
             return $this->csv($definition, $rows);
         }
 
+        // The on-screen table is capped; the CSV export carries the full
+        // set. Keeps a large report from flooding the browser DOM.
+        $cap = (int) config('performance.report_row_cap', 500);
+        $total = $rows->count();
+
         return response()->json([
             'key' => $definition->key(),
             'label' => $definition->label(),
@@ -78,7 +82,10 @@ class ReportController extends Controller
             'filters' => $filters,
             'columns' => $definition->columns(),
             'summary' => $definition->summary($filters),
-            'rows' => $rows,
+            'rows' => $rows->take($cap)->values(),
+            'total_rows' => $total,
+            'truncated' => $total > $cap,
+            'row_cap' => $cap,
         ]);
     }
 
@@ -110,7 +117,7 @@ class ReportController extends Controller
         ]);
     }
 
-    private function csv(Report $definition, \Illuminate\Support\Collection $rows): StreamedResponse
+    private function csv(Report $definition, Collection $rows): StreamedResponse
     {
         $columns = $definition->columns();
         $filename = $definition->key().'-'.now()->format('Ymd-His').'.csv';

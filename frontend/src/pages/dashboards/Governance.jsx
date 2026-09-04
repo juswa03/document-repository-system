@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DashboardShell from './DashboardShell';
+import Pager from '../../components/Pager';
 import api from '../../lib/api';
 import './dashboards.css';
 
@@ -16,6 +17,8 @@ const SCOPE_LABELS = {
 export default function Governance() {
   const [status, setStatus] = useState([]);
   const [history, setHistory] = useState([]);
+  const [historyMeta, setHistoryMeta] = useState(null);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [recording, setRecording] = useState(null); // scope
@@ -25,9 +28,10 @@ export default function Governance() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.get('/admin/governance-reviews');
+      const { data } = await api.get('/admin/governance-reviews', { params: { page } });
       setStatus(data.status);
-      setHistory(data.history);
+      setHistory(data.history.data);
+      setHistoryMeta(data.history.meta);
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not load governance reviews.');
     } finally {
@@ -37,14 +41,15 @@ export default function Governance() {
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   async function record(scope) {
     try {
       await api.post('/admin/governance-reviews', { scope, notes: notes || undefined });
       setRecording(null);
       setNotes('');
-      load();
+      page === 1 ? load() : setPage(1);
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not record the review.');
     }
@@ -142,6 +147,7 @@ export default function Governance() {
             ))}
           </tbody>
         </table>
+        <Pager meta={historyMeta} page={page} onPage={setPage} />
       </section>
     </DashboardShell>
   );

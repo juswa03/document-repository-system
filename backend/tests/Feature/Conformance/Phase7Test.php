@@ -55,7 +55,7 @@ class Phase7Test extends ConformanceTestCase
         $stale = $this->createDocument('user@example.test');
         $stale->update(['submitted_at' => now()->subDays(20)]);
 
-        $row = collect($this->asOsmAdmin()->getJson('/api/osm-admin/queue')->assertOk()->json())
+        $row = collect($this->asOsmAdmin()->getJson('/api/osm-admin/queue')->assertOk()->json('data'))
             ->firstWhere('id', $stale->id);
         $this->assertTrue($row['overdue']);
         $this->assertSame(config('lead_times.review_days.simple'), $row['target_days']);

@@ -19,7 +19,7 @@ export default function AdminOverview() {
 
   useEffect(() => {
     api
-      .get('/admin/users')
+      .get('/admin/users', { params: { all: 1 } })
       .then(({ data }) => setUsers(data))
       .catch((err) => setError(err?.response?.data?.message || 'Could not load overview data.'))
       .finally(() => setLoading(false));

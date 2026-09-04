@@ -30,7 +30,7 @@ export default function AuditLog() {
 
   useEffect(() => {
     api
-      .get('/admin/users')
+      .get('/admin/users', { params: { all: 1 } })
       .then(({ data }) => setUsers(data))
       .catch(() => {});
   }, []);

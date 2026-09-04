@@ -3,6 +3,7 @@ import DashboardShell from './DashboardShell';
 import StatusBadge from '../../components/StatusBadge';
 import AiSuggestionPanel from '../../components/AiSuggestionPanel';
 import ObjectivePicker from '../../components/ObjectivePicker';
+import Pager from '../../components/Pager';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
 import { downloadDocumentFile } from '../../lib/download';
@@ -17,6 +18,9 @@ const SCOPES = [
 export default function OsmAdminDashboard() {
   const { user } = useAuth();
   const [queue, setQueue] = useState([]);
+  const [queueMeta, setQueueMeta] = useState(null);
+  const [queuePage, setQueuePage] = useState(1);
+  const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState(null);
   const [config, setConfig] = useState({ checklists: {}, reviewers: [] });
   const [decided, setDecided] = useState([]);
@@ -37,8 +41,15 @@ export default function OsmAdminDashboard() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.get('/osm-admin/queue', { params: { scope: nextScope } });
-      setQueue(data);
+      const { data } = await api.get('/osm-admin/queue', {
+        params: {
+          scope: nextScope,
+          page: queuePage,
+          category_id: categoryFilter || undefined,
+        },
+      });
+      setQueue(data.data);
+      setQueueMeta(data.meta);
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not load the review queue.');
     } finally {
@@ -61,12 +72,16 @@ export default function OsmAdminDashboard() {
       .get('/osm-admin/review-config')
       .then(({ data }) => setConfig(data))
       .catch(() => {});
+    api
+      .get('/categories')
+      .then(({ data }) => setCategories(data))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     loadQueue(scope);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope]);
+  }, [scope, queuePage, categoryFilter]);
 
   const tiles = useMemo(() => {
     const d = stats?.documents;
@@ -80,15 +95,7 @@ export default function OsmAdminDashboard() {
     ];
   }, [stats]);
 
-  const categoryOptions = useMemo(
-    () => [...new Set(queue.filter((i) => i.category).map((i) => i.category))],
-    [queue]
-  );
-
-  const visibleQueue = useMemo(
-    () => (categoryFilter ? queue.filter((i) => i.category === categoryFilter) : queue),
-    [queue, categoryFilter]
-  );
+  const visibleQueue = queue;
 
   function keyOf(item) {
     return `${item.kind}-${item.id}`;
@@ -152,12 +159,12 @@ export default function OsmAdminDashboard() {
         remarks: decisionRemarks || undefined,
         checklist: checklist || undefined,
       });
-      setQueue((prev) => prev.filter((q) => keyOf(q) !== key));
       setDecided((prev) => [{ ...item, decision, remarks: decisionRemarks || '' }, ...prev]);
       setRejectingKey(null);
       setApprovingKey(null);
       setRemarks('');
       loadStats();
+      loadQueue();
     } catch (err) {
       const checklistErr = err?.response?.data?.errors?.checklist?.[0];
       setError(checklistErr || err?.response?.data?.message || 'That decision could not be saved.');
@@ -186,16 +193,21 @@ export default function OsmAdminDashboard() {
             <p className="panel-subtitle">Claim an item, run the completeness check, then decide.</p>
           </div>
           <div className="btn-row">
-            {categoryOptions.length > 0 && (
+            {categories.length > 0 && (
               <select
                 className="dash-select"
                 style={{ width: 'auto', color: 'var(--text-label)' }}
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
+                onChange={(e) => {
+                  setQueuePage(1);
+                  setCategoryFilter(e.target.value);
+                }}
               >
                 <option value="">All categories</option>
-                {categoryOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.category_name}
+                  </option>
                 ))}
               </select>
             )}
@@ -445,6 +457,8 @@ export default function OsmAdminDashboard() {
             </tbody>
           </table>
         )}
+
+        <Pager meta={queueMeta} page={queuePage} onPage={setQueuePage} />
       </section>
 
       <section className="panel">

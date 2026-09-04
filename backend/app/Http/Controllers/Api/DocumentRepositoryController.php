@@ -96,7 +96,7 @@ class DocumentRepositoryController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return $documents->through(fn (Document $d) => [
+        return $this->paged($documents, fn (Document $d) => [
             'id' => $d->id,
             'ref' => $d->tracking_no,
             'title' => $d->title,

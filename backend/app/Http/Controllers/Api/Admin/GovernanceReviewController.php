@@ -15,14 +15,16 @@ use Illuminate\Validation\Rule;
  */
 class GovernanceReviewController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         return response()->json([
             'status' => GovernanceReview::status(),
-            'history' => GovernanceReview::with('reviewer:id,full_name')
-                ->latest('performed_at')
-                ->limit(50)
-                ->get(),
+            'history' => $this->paged(
+                GovernanceReview::with('reviewer:id,full_name')
+                    ->latest('performed_at')
+                    ->paginate(15)
+                    ->withQueryString()
+            ),
         ]);
     }
 

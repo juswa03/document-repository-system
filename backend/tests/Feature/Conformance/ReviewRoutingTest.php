@@ -3,7 +3,6 @@
 namespace Tests\Feature\Conformance;
 
 use App\Models\Document;
-use App\Models\Notification;
 use App\Models\Office;
 use App\Models\Review;
 use App\Models\User;
@@ -44,7 +43,7 @@ class ReviewRoutingTest extends ConformanceTestCase
 
         $unassigned = $this->actingAsEmail($reviewerA->email)
             ->getJson('/api/osm-admin/queue?scope=unassigned')
-            ->assertOk()->json();
+            ->assertOk()->json('data');
 
         $refs = collect($unassigned)->pluck('id');
         $this->assertTrue($refs->contains($idA), 'reviewer sees their own office\'s item');
@@ -61,7 +60,7 @@ class ReviewRoutingTest extends ConformanceTestCase
             'assignee_id' => $this->userId('osm.admin@example.test'),
         ])->assertOk()->assertJsonPath('assigned_to', $this->userId('osm.admin@example.test'));
 
-        $mine = $this->asOsmAdmin()->getJson('/api/osm-admin/queue?scope=mine')->assertOk()->json();
+        $mine = $this->asOsmAdmin()->getJson('/api/osm-admin/queue?scope=mine')->assertOk()->json('data');
         $this->assertSame([$id], collect($mine)->pluck('id')->all());
 
         $this->assertDatabaseHas('audit_logs', ['action' => 'document_assigned']);

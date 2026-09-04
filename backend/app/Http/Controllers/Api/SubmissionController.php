@@ -49,6 +49,9 @@ class SubmissionController extends Controller
             ->sortByDesc('submitted_at')
             ->values();
 
+        // Not paginated: a single user's own submissions is the smallest
+        // list in the app, and the dashboard needs the full set to derive
+        // the "needs revision / rejected" notices.
         return response()->json($merged);
     }
 
@@ -64,9 +67,12 @@ class SubmissionController extends Controller
      */
     public function queue(Request $request)
     {
-        $scope = $request->validate([
+        $validated = $request->validate([
             'scope' => ['nullable', 'in:all,mine,unassigned'],
-        ])['scope'] ?? 'all';
+            'category_id' => ['nullable', 'exists:categories,id'],
+        ]);
+        $scope = $validated['scope'] ?? 'all';
+        $categoryId = $validated['category_id'] ?? null;
 
         $reviewer = $request->user();
 
@@ -93,11 +99,16 @@ class SubmissionController extends Controller
             return $query;
         };
 
-        $requests = $apply(SubmissionRequest::with(['requestType', 'requester', 'assignee']), false)
-            ->get()
-            ->map(fn ($r) => $this->formatRequest($r, includeSubmitter: true));
+        // A category filter only makes sense for documents; requests have
+        // no category, so setting it drops them from the queue.
+        $requests = $categoryId
+            ? collect()
+            : $apply(SubmissionRequest::with(['requestType', 'requester', 'assignee']), false)
+                ->get()
+                ->map(fn ($r) => $this->formatRequest($r, includeSubmitter: true));
 
         $documents = $apply(Document::with(['category', 'uploader', 'assignee']), true)
+            ->when($categoryId, fn ($q, $v) => $q->where('category_id', $v))
             ->get()
             ->map(fn ($d) => $this->formatDocument($d, includeSubmitter: true));
 
@@ -105,7 +116,7 @@ class SubmissionController extends Controller
             ->sortBy('submitted_at')
             ->values();
 
-        return response()->json($merged);
+        return response()->json($this->paged($this->paginateCollection($merged, $request, 20)));
     }
 
     /**

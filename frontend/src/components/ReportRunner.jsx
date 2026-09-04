@@ -219,7 +219,10 @@ export default function ReportRunner() {
                 </table>
               </div>
               <p className="cell-muted" style={{ marginTop: '0.5rem' }}>
-                {result.rows.length} row{result.rows.length === 1 ? '' : 's'} · generated {result.generated_at}
+                {result.truncated
+                  ? `Showing the first ${result.rows.length} of ${result.total_rows} rows — export to CSV for the full set.`
+                  : `${result.rows.length} row${result.rows.length === 1 ? '' : 's'}`}{' '}
+                · generated {result.generated_at}
               </p>
             </>
           )}
