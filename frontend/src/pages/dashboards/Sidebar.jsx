@@ -10,6 +10,7 @@ import {
   ListChecks,
   Target,
   Sparkles,
+  ScrollText,
   FileText,
   ChevronLeft,
   ChevronRight,
@@ -38,6 +39,7 @@ const NAV_BY_ROLE = {
         { icon: ListChecks, label: 'Required documents', to: '/admin/required-documents' },
         { icon: Target, label: 'Strategic objectives', to: '/admin/objectives' },
         { icon: ShieldCheck, label: 'Governance', to: '/admin/governance' },
+        { icon: ScrollText, label: 'Audit log', to: '/admin/audit-log' },
       ],
     },
     {

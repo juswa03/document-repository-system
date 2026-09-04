@@ -30,11 +30,13 @@ export default function UserFormModal({ mode, user, onClose, onSaved }) {
     setSaving(true);
     try {
       if (isEdit) {
-        const { data } = await api.patch(`/admin/users/${user.id}`, {
+        const payload = {
           full_name: fullName,
           role,
           office_id: officeId || null,
-        });
+        };
+        if (password) payload.password = password;
+        const { data } = await api.patch(`/admin/users/${user.id}`, payload);
         onSaved(data);
       } else {
         const { data } = await api.post('/admin/users', {
@@ -112,21 +114,28 @@ export default function UserFormModal({ mode, user, onClose, onSaved }) {
           </div>
         </div>
 
-        {!isEdit && (
-          <div className="dash-field">
-            <label className="dash-label" htmlFor="password" style={{ color: 'var(--text-label)' }}>Temporary password</label>
-            <input
-              style={{ color: 'var(--text-value)' }}
-              id="password"
-              type="password"
-              className="dash-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-            />
-          </div>
-        )}
+        <div className="dash-field">
+          <label className="dash-label" htmlFor="password" style={{ color: 'var(--text-label)' }}>
+            {isEdit ? 'Set new password' : 'Temporary password'}
+          </label>
+          <input
+            style={{ color: 'var(--text-value)' }}
+            id="password"
+            type="password"
+            className="dash-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required={!isEdit}
+            minLength={8}
+            autoComplete="new-password"
+            placeholder={isEdit ? 'Leave blank to keep the current password' : undefined}
+          />
+          {isEdit && (
+            <p className="cell-muted" style={{ marginTop: '0.3rem', color: 'var(--text-value)' }}>
+              Setting a password signs the user out of all devices.
+            </p>
+          )}
+        </div>
 
         {error && <p className="error-banner">{error}</p>}
 
