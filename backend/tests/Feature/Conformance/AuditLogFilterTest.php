@@ -3,6 +3,7 @@
 namespace Tests\Feature\Conformance;
 
 use App\Models\AuditLog;
+use App\Models\SystemSetting;
 
 /**
  * Phase 17 — the audit log can be filtered (action, actor, date range)
@@ -79,5 +80,26 @@ class AuditLogFilterTest extends ConformanceTestCase
     {
         $this->asOsmAdmin()->getJson('/api/admin/audit-log')->assertForbidden();
         $this->asUser()->getJson('/api/admin/audit-log')->assertForbidden();
+    }
+
+    public function test_a_row_carries_the_recorded_before_after_properties(): void
+    {
+        $admin = $this->user('system.admin@example.test');
+        AuditLog::record(
+            $admin->id,
+            'ai_settings_updated',
+            'Updated AI settings: ai_enabled.',
+            SystemSetting::class,
+            1,
+            ['before' => ['ai_enabled' => false], 'after' => ['ai_enabled' => true]],
+        );
+
+        $rows = $this->asSystemAdmin()
+            ->getJson('/api/admin/audit-log?action=ai_settings_updated')
+            ->assertOk()->json('data');
+
+        $this->assertSame(false, $rows[0]['properties']['before']['ai_enabled']);
+        $this->assertSame(true, $rows[0]['properties']['after']['ai_enabled']);
+        $this->assertSame('SystemSetting #1', $rows[0]['subject']);
     }
 }

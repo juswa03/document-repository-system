@@ -37,8 +37,10 @@ export default function ManageRequiredDocuments() {
     try {
       const [r, o, c] = await Promise.all([
         api.get('/admin/required-documents'),
-        api.get('/offices'),
-        api.get('/categories'),
+        // ?all=1 so a rule that targets a since-deactivated office or
+        // category still resolves to a name instead of showing blank.
+        api.get('/offices', { params: { all: 1 } }),
+        api.get('/categories', { params: { all: 1 } }),
       ]);
       setRows(r.data);
       setOffices(o.data);
@@ -178,7 +180,11 @@ export default function ManageRequiredDocuments() {
                 <select id="rd-office" className="dash-select" value={form.office_id || ''}
                   onChange={(e) => setForm({ ...form, office_id: e.target.value })}>
                   <option value="">All offices</option>
-                  {offices.map((o) => <option key={o.id} value={o.id}>{o.office_name}</option>)}
+                  {offices.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.office_name}{o.is_active === false ? ' (inactive)' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -188,7 +194,11 @@ export default function ManageRequiredDocuments() {
                 <select id="rd-cat" className="dash-select" value={form.category_id || ''}
                   onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
                   <option value="">Any category</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.category_name}</option>)}
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.category_name}{c.is_active === false ? ' (inactive)' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="dash-field">

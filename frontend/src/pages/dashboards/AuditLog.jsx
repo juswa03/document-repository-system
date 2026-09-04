@@ -1,10 +1,68 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import DashboardShell from './DashboardShell';
+import Pager from '../../components/Pager';
 import api from '../../lib/api';
 import { downloadAuditLogCsv } from '../../lib/download';
 import './dashboards.css';
 
 const EMPTY = { action: '', actor_id: '', date_from: '', date_to: '' };
+
+const fmt = (v) =>
+  v === null || v === undefined ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+
+/** Renders the `properties` bag recorded with an entry — a before/after
+ *  diff when present, otherwise a plain key/value list. */
+function EntryDetail({ subject, properties }) {
+  const hasProps = properties && typeof properties === 'object' && Object.keys(properties).length > 0;
+  const { before, after } = properties || {};
+  const isDiff = before && after && typeof before === 'object' && typeof after === 'object';
+
+  return (
+    <div style={{ padding: '0.5rem 0' }}>
+      {subject && (
+        <p className="cell-muted" style={{ marginBottom: '0.4rem' }}>
+          Subject: {subject}
+        </p>
+      )}
+
+      {!hasProps && <span className="cell-muted">No additional detail recorded.</span>}
+
+      {hasProps && isDiff && (
+        <table className="data-table" style={{ margin: 0 }}>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Before</th>
+              <th>After</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from(new Set([...Object.keys(before), ...Object.keys(after)])).map((k) => (
+              <tr key={k}>
+                <td className="cell-mono">{k}</td>
+                <td className="cell-muted">{fmt(before[k])}</td>
+                <td>{fmt(after[k])}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {hasProps && !isDiff && (
+        <table className="data-table" style={{ margin: 0 }}>
+          <tbody>
+            {Object.entries(properties).map(([k, v]) => (
+              <tr key={k}>
+                <td className="cell-mono">{k}</td>
+                <td>{fmt(v)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
 
 export default function AuditLog() {
   const [entries, setEntries] = useState([]);
@@ -13,6 +71,7 @@ export default function AuditLog() {
   const [users, setUsers] = useState([]);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState(EMPTY);
+  const [openId, setOpenId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
@@ -38,6 +97,7 @@ export default function AuditLog() {
   useEffect(() => {
     setLoading(true);
     setError('');
+    setOpenId(null);
     api
       .get('/admin/audit-log', { params })
       .then(({ data }) => {
@@ -77,7 +137,8 @@ export default function AuditLog() {
             <h2 className="panel-title">Activity history</h2>
             <p className="panel-subtitle">
               Every upload, download, review decision, access grant, retention action, AI action,
-              sign-in and settings change — always recorded.
+              sign-in and settings change — always recorded. Rows with a ▸ expand to show what
+              changed.
             </p>
           </div>
           <button className="btn btn--outline btn-sm" disabled={exporting} onClick={exportCsv}>
@@ -167,42 +228,43 @@ export default function AuditLog() {
                       </td>
                     </tr>
                   )}
-                  {entries.map((entry) => (
-                    <tr key={entry.id}>
-                      <td className="cell-muted">{new Date(entry.created_at).toLocaleString()}</td>
-                      <td>{entry.actor}</td>
-                      <td className="cell-mono">{entry.action}</td>
-                      <td>{entry.description}</td>
-                      <td className="cell-muted cell-mono">{entry.ip_address || '—'}</td>
-                    </tr>
-                  ))}
+                  {entries.map((entry) => {
+                    const expandable = !!entry.properties || !!entry.subject;
+                    const open = openId === entry.id;
+                    return (
+                      <Fragment key={entry.id}>
+                        <tr
+                          onClick={() => expandable && setOpenId(open ? null : entry.id)}
+                          style={{ cursor: expandable ? 'pointer' : 'default' }}
+                        >
+                          <td className="cell-muted">{new Date(entry.created_at).toLocaleString()}</td>
+                          <td>{entry.actor}</td>
+                          <td className="cell-mono">{entry.action}</td>
+                          <td>
+                            {entry.description}
+                            {expandable && (
+                              <span className="cell-muted" style={{ marginLeft: '0.4rem' }}>
+                                {open ? '▾' : '▸'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="cell-muted cell-mono">{entry.ip_address || '—'}</td>
+                        </tr>
+                        {open && (
+                          <tr>
+                            <td colSpan={5} style={{ background: 'var(--content-bg, #f8fafc)' }}>
+                              <EntryDetail subject={entry.subject} properties={entry.properties} />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            {meta && meta.last_page > 1 && (
-              <div className="pager">
-                <span>
-                  Page {meta.current_page} of {meta.last_page} — {meta.total} total
-                </span>
-                <div className="btn-row">
-                  <button
-                    className="btn btn--outline btn-sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    ← Previous
-                  </button>
-                  <button
-                    className="btn btn--outline btn-sm"
-                    disabled={page >= meta.last_page}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Next →
-                  </button>
-                </div>
-              </div>
-            )}
+            <Pager meta={meta} page={page} onPage={setPage} />
           </>
         )}
       </section>

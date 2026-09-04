@@ -56,6 +56,8 @@ class AuditLogController extends Controller
             'action' => $log->action,
             'description' => $log->description,
             'ip_address' => $log->ip_address,
+            'subject' => $log->subject_type ? class_basename($log->subject_type).($log->subject_id ? " #{$log->subject_id}" : '') : null,
+            'properties' => $log->properties,
             'created_at' => $log->created_at,
         ];
     }
@@ -66,7 +68,7 @@ class AuditLogController extends Controller
 
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['When', 'Actor', 'Action', 'Details', 'IP']);
+            fputcsv($out, ['When', 'Actor', 'Action', 'Details', 'IP', 'Changes']);
             $query->chunk(500, function ($rows) use ($out) {
                 foreach ($rows as $log) {
                     fputcsv($out, [
@@ -75,6 +77,7 @@ class AuditLogController extends Controller
                         $log->action,
                         $log->description,
                         $log->ip_address,
+                        $log->properties ? json_encode($log->properties) : '',
                     ]);
                 }
             });
