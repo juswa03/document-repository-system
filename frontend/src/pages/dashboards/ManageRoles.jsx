@@ -3,26 +3,13 @@ import DashboardShell from './DashboardShell';
 import api from '../../lib/api';
 import './dashboards.css';
 
-// Human copy for the three roles (decision 0.2 — Option B, three roles).
-// The capability grid itself comes from GET /api/admin/role-matrix so the
-// screen can never drift from what the backend actually enforces.
-const ROLE_META = {
-  user: {
-    name: 'User / office',
-    desc: 'Submits documents or requests and tracks their own status.',
-  },
-  osm_admin: {
-    name: 'OSM admin',
-    desc:
-      'The whole OSM review-and-publish function — completeness check, classification, ' +
-      'return / reject / approve, access grants, retention and disposal, repository search, reports.',
-  },
-  system_admin: {
-    name: 'System admin',
-    desc:
-      'Platform only — user accounts, lookups, settings, AI settings, audit log, governance cadence. ' +
-      'No document decisions and no document submission.',
-  },
+// Fallback copy if the API is unreachable — normally the role name and
+// description come straight from GET /api/admin/role-matrix so the screen
+// can never drift from what the backend enforces.
+const ROLE_FALLBACK = {
+  user: { name: 'User / office', description: '' },
+  osm_admin: { name: 'OSM admin', description: '' },
+  system_admin: { name: 'System admin', description: '' },
 };
 
 export default function ManageRoles() {
@@ -48,6 +35,21 @@ export default function ManageRoles() {
   }, []);
 
   const roles = useMemo(() => matrix?.roles ?? [], [matrix]);
+  const meta = (key) => matrix?.meta?.[key] || ROLE_FALLBACK[key] || { name: key, description: '' };
+
+  // Rows grouped by their functional area, groups in first-seen order.
+  const grouped = useMemo(() => {
+    const out = [];
+    for (const row of matrix?.rows ?? []) {
+      let bucket = out.find((b) => b.group === row.group);
+      if (!bucket) {
+        bucket = { group: row.group, rows: [] };
+        out.push(bucket);
+      }
+      bucket.rows.push(row);
+    }
+    return out;
+  }, [matrix]);
 
   return (
     <DashboardShell eyebrow="System / super admin" title="Manage roles">
@@ -65,8 +67,8 @@ export default function ManageRoles() {
 
         {roles.map((key) => (
           <div className="role-card" key={key}>
-            <p className="role-name">{ROLE_META[key]?.name || key}</p>
-            <p className="role-desc">{ROLE_META[key]?.desc || ''}</p>
+            <p className="role-name">{meta(key).name}</p>
+            <p className="role-desc">{meta(key).description}</p>
           </div>
         ))}
       </section>
@@ -76,7 +78,8 @@ export default function ManageRoles() {
           <div>
             <h2 className="panel-title">Permission matrix</h2>
             <p className="panel-subtitle">
-              Exactly what the API enforces — sourced live from the backend.
+              Exactly what the API enforces — sourced live from the backend.{' '}
+              <span className="cell-muted">✓ allowed · — not allowed</span>
             </p>
           </div>
         </div>
@@ -91,30 +94,14 @@ export default function ManageRoles() {
                   <th>Capability</th>
                   {roles.map((r) => (
                     <th key={r} style={{ textAlign: 'center' }}>
-                      {ROLE_META[r]?.name || r}
+                      {meta(r).name}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {(matrix?.rows ?? []).map((row) => (
-                  <tr key={row.capability}>
-                    <td>
-                      {row.label}
-                      <span className="cell-mono" style={{ display: 'block', opacity: 0.6, fontSize: '.8em' }}>
-                        {row.capability}
-                      </span>
-                    </td>
-                    {roles.map((r) => (
-                      <td key={r} style={{ textAlign: 'center' }}>
-                        {row.allowed[r] ? (
-                          <span aria-label="allowed" style={{ color: 'var(--ok, #3a7256)' }}>✓</span>
-                        ) : (
-                          <span aria-label="not allowed" style={{ opacity: 0.3 }}>—</span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
+                {grouped.map((bucket) => (
+                  <FragmentGroup key={bucket.group} bucket={bucket} roles={roles} />
                 ))}
               </tbody>
             </table>
@@ -122,5 +109,44 @@ export default function ManageRoles() {
         )}
       </section>
     </DashboardShell>
+  );
+}
+
+function FragmentGroup({ bucket, roles }) {
+  return (
+    <>
+      <tr>
+        <td
+          colSpan={roles.length + 1}
+          className="cell-muted"
+          style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.72rem', paddingTop: '1rem' }}
+        >
+          {bucket.group}
+        </td>
+      </tr>
+      {bucket.rows.map((row) => (
+        <tr key={row.capability}>
+          <td>
+            {row.label}
+            <span className="cell-mono" style={{ display: 'block', opacity: 0.6, fontSize: '.8em' }}>
+              {row.capability}
+            </span>
+          </td>
+          {roles.map((r) => (
+            <td key={r} style={{ textAlign: 'center' }}>
+              {row.allowed[r] ? (
+                <span aria-label="allowed" style={{ color: 'var(--primary)' }}>
+                  ✓
+                </span>
+              ) : (
+                <span aria-label="not allowed" style={{ opacity: 0.3 }}>
+                  —
+                </span>
+              )}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
   );
 }
