@@ -17,6 +17,10 @@ final class Suggestion
 
     public const KIND_CONFIDENTIALITY = 'confidentiality';
 
+    public const KIND_SUMMARY = 'summary';
+
+    public const KIND_NEAR_DUPLICATE = 'near_duplicate';
+
     public function __construct(
         public readonly string $kind,
         /** @var array<string, mixed> kind-specific payload */

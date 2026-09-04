@@ -33,4 +33,15 @@ return [
 
     'retention_statuses' => ['active', 'superseded', 'archived', 'disposed'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Near-duplicate detection (PF-06 / AI-03, Phase 10)
+    |--------------------------------------------------------------------------
+    | Word-trigram Jaccard similarity (0-100) at or above which a newly
+    | analysed document is flagged as a possible near-duplicate of an
+    | existing one in the same category and office. Advisory only.
+    */
+
+    'near_duplicate_threshold' => (int) env('DOCUMENTS_NEAR_DUPLICATE_THRESHOLD', 65),
+
 ];

@@ -64,6 +64,54 @@ trait BuildsSuggestions
         return $result === null ? null : $result[0];
     }
 
+    public function summarize(DocumentContext $document, ?string $text): ?Suggestion
+    {
+        $text = trim((string) $text);
+
+        if (! $this->isConfigured() || $text === '') {
+            return null;
+        }
+
+        $result = $this->structuredCall(
+            system: 'You summarise a filed document for a records catalogue. Write a neutral '
+                .'3-4 sentence abstract and 3-6 short key points. Base it only on the text given; '
+                .'do not speculate beyond it.',
+            user: "Title: {$document->title}\n\nDocument text:\n".mb_substr($text, 0, 12000),
+            tool: [
+                'name' => 'record_summary',
+                'description' => 'Record the document summary.',
+                'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'summary' => ['type' => 'string'],
+                        'key_points' => ['type' => 'array', 'items' => ['type' => 'string']],
+                        'confidence' => ['type' => 'number', 'minimum' => 0, 'maximum' => 1],
+                    ],
+                    'required' => ['summary', 'confidence'],
+                ],
+            ],
+        );
+
+        if ($result === null || trim((string) ($result[0]['summary'] ?? '')) === '') {
+            return null;
+        }
+
+        [$input, $usage] = $result;
+
+        return new Suggestion(
+            kind: Suggestion::KIND_SUMMARY,
+            data: [
+                'summary' => trim($input['summary']),
+                'key_points' => array_values(array_filter((array) ($input['key_points'] ?? []), 'is_string')),
+            ],
+            confidence: (float) ($input['confidence'] ?? 0),
+            rationale: 'Generated from the extracted document text.',
+            model: $this->settings->model,
+            inputTokens: $usage[0],
+            outputTokens: $usage[1],
+        );
+    }
+
     public function classify(DocumentContext $document, array $categories): ?Suggestion
     {
         if (! $this->isConfigured() || $categories === []) {

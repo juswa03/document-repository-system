@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\AI\Suggestion;
 use App\Http\Controllers\Controller;
+use App\Models\AiSummary;
 use App\Models\AuditLog;
 use App\Models\Category;
 use App\Models\Document;
@@ -118,6 +119,17 @@ class AiSuggestionController extends Controller
 
         if ($applied !== []) {
             $document->save();
+        }
+
+        // A summary is stored on the document (not a column) when accepted;
+        // a near-duplicate note has nothing to apply — accepting it is an
+        // acknowledgement, same as a completeness note.
+        if ($s->kind === Suggestion::KIND_SUMMARY && filled($s->data['summary'] ?? null)) {
+            AiSummary::updateOrCreate(
+                ['document_id' => $document->id],
+                ['summary_text' => $s->data['summary'], 'generated_at' => now()],
+            );
+            $applied['ai_summary'] = true;
         }
 
         return $applied;

@@ -71,6 +71,13 @@ interface AiProvider
     public function checkConfidentiality(DocumentContext $document, array $accessLevels): ?Suggestion;
 
     /**
+     * Summarise the document from its extracted text (AI-07 / PF-13).
+     * Suggest-only — surfaced in the review queue; on accept it is stored
+     * as the document's AI summary. Returns null with no text or no key.
+     */
+    public function summarize(DocumentContext $document, ?string $text): ?Suggestion;
+
+    /**
      * Turn a natural-language repository query into structured search
      * filters (FR-10). Returns a loose map — {q, category, office,
      * status, date_from, date_to} — or null when the layer is off. The
