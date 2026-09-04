@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Conformance;
 
-use App\Models\AccessGrant;
 use App\Models\Document;
 use App\Models\Office;
 use App\Models\User;
@@ -101,6 +100,18 @@ class AccessControlTest extends ConformanceTestCase
         $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/access-grants", [
             'grantee_user_id' => $this->other->id, 'reason' => 'n/a',
         ])->assertStatus(422);
+    }
+
+    public function test_the_osm_grantee_picker_list_is_reachable_by_an_osm_admin_only(): void
+    {
+        $rows = $this->asOsmAdmin()->getJson('/api/osm-admin/users')
+            ->assertOk()
+            ->assertJsonStructure([['id', 'full_name']])
+            ->json();
+
+        $this->assertContains('other@example.test', User::whereIn('id', array_column($rows, 'id'))->pluck('email')->all());
+
+        $this->asUser()->getJson('/api/osm-admin/users')->assertForbidden();
     }
 
     public function test_repository_search_hides_documents_the_caller_cannot_see(): void

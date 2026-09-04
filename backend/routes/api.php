@@ -26,6 +26,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Models\Category;
 use App\Models\Office;
 use App\Models\RequestType;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:auth')->group(function () {
@@ -131,6 +132,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/documents/{document}/access-grants', [AccessGrantController::class, 'index']);
         Route::post('/documents/{document}/access-grants', [AccessGrantController::class, 'store']);
         Route::delete('/access-grants/{accessGrant}', [AccessGrantController::class, 'destroy']);
+
+        // Minimal active-user list for the access-grant grantee picker.
+        Route::get('/users', fn () => response()->json(
+            User::where('is_active', true)
+                ->orderBy('full_name')
+                ->with('office:id,office_name')
+                ->get(['id', 'full_name', 'office_id'])
+        ));
 
         // Strategic-objective links on a document (Phase 11). The tree
         // itself is read-only here so a reviewer can pick from it.

@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import StatusBadge from '../../components/StatusBadge';
 import AiSuggestionPanel from '../../components/AiSuggestionPanel';
+import AccessGrantsPanel from '../../components/AccessGrantsPanel';
 import ObjectivePicker from '../../components/ObjectivePicker';
 import Pager from '../../components/Pager';
 import { useAuth } from '../../context/AuthContext';
@@ -15,6 +16,8 @@ const SCOPES = [
   { key: 'unassigned', label: 'Unassigned' },
   { key: 'mine', label: 'Assigned to me' },
 ];
+
+const ACCESS_LEVELS = ['public', 'internal', 'restricted', 'confidential'];
 
 function fmtSize(bytes) {
   if (!bytes && bytes !== 0) return null;
@@ -81,12 +84,14 @@ export default function OsmAdminDashboard() {
   const [rejectingKey, setRejectingKey] = useState(null);
   const [approvingKey, setApprovingKey] = useState(null);
   const [checklistState, setChecklistState] = useState({});
+  const [approveAccessLevel, setApproveAccessLevel] = useState('internal');
   const [remarks, setRemarks] = useState('');
   const [busyKey, setBusyKey] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [aiKey, setAiKey] = useState(null);
   const [objKey, setObjKey] = useState(null);
   const [detailKey, setDetailKey] = useState(null);
+  const [grantKey, setGrantKey] = useState(null);
 
   async function loadQueue(nextScope = scope) {
     setLoading(true);
@@ -159,6 +164,7 @@ export default function OsmAdminDashboard() {
   function openApprove(item) {
     setRejectingKey(null);
     setApprovingKey(keyOf(item));
+    setApproveAccessLevel(item.access_level || 'internal');
     const seed = {};
     checklistFor(item.kind).forEach((c) => {
       seed[c.key] = false;
@@ -199,7 +205,7 @@ export default function OsmAdminDashboard() {
     }
   }
 
-  async function decide(item, decision, decisionRemarks, checklist) {
+  async function decide(item, decision, decisionRemarks, checklist, accessLevel) {
     const key = keyOf(item);
     setBusyKey(key);
     try {
@@ -209,6 +215,10 @@ export default function OsmAdminDashboard() {
         decision,
         remarks: decisionRemarks || undefined,
         checklist: checklist || undefined,
+        access_level:
+          item.kind === 'document' && accessLevel && accessLevel !== item.access_level
+            ? accessLevel
+            : undefined,
       });
       setDecided((prev) => [{ ...item, decision, remarks: decisionRemarks || '' }, ...prev]);
       setRejectingKey(null);
@@ -388,6 +398,15 @@ export default function OsmAdminDashboard() {
                               {objKey === key ? 'Hide objectives' : 'Objectives'}
                             </button>
                           )}
+                          {item.kind === 'document' &&
+                            ['restricted', 'confidential'].includes(item.access_level) && (
+                              <button
+                                className="btn btn--outline btn-sm"
+                                onClick={() => setGrantKey((k) => (k === key ? null : key))}
+                              >
+                                {grantKey === key ? 'Hide grants' : 'Access grants'}
+                              </button>
+                            )}
                           <button
                             className="btn btn--primary btn-sm"
                             disabled={isBusy}
@@ -445,6 +464,19 @@ export default function OsmAdminDashboard() {
                       </tr>
                     )}
 
+                    {grantKey === key && item.kind === 'document' && (
+                      <tr>
+                        <td colSpan={6}>
+                          <div className="inline-form">
+                            <h3 className="panel-title" style={{ fontSize: '0.95rem', marginBottom: '0.4rem' }}>
+                              Access grants — {item.access_level} document
+                            </h3>
+                            <AccessGrantsPanel documentId={item.id} />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+
                     {approvingKey === key && (
                       <tr>
                         <td colSpan={6}>
@@ -465,11 +497,35 @@ export default function OsmAdminDashboard() {
                                 {c.required ? <span style={{ color: 'var(--danger, #a1442f)' }}> *</span> : null}
                               </label>
                             ))}
+
+                            {item.kind === 'document' && (
+                              <div className="dash-field" style={{ maxWidth: 260, marginTop: '0.7rem' }}>
+                                <label className="dash-label" htmlFor={`acc-${key}`}>
+                                  Access level at approval
+                                </label>
+                                <select
+                                  id={`acc-${key}`}
+                                  className="dash-select"
+                                  value={approveAccessLevel}
+                                  onChange={(e) => setApproveAccessLevel(e.target.value)}
+                                >
+                                  {ACCESS_LEVELS.map((l) => (
+                                    <option key={l} value={l}>
+                                      {l}
+                                      {l === item.access_level ? ' (as submitted)' : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
                             <div className="btn-row" style={{ marginTop: '0.6rem' }}>
                               <button
                                 className="btn btn--primary btn-sm"
                                 disabled={!requiredMet || isBusy}
-                                onClick={() => decide(item, 'approved', null, checklistState)}
+                                onClick={() =>
+                                  decide(item, 'approved', null, checklistState, approveAccessLevel)
+                                }
                               >
                                 Approve
                               </button>
