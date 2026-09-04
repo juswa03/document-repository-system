@@ -145,6 +145,17 @@ class StrategicObjectiveTest extends ConformanceTestCase
             ->assertForbidden();
     }
 
+    public function test_the_repository_objective_list_is_readable_by_both_admin_roles(): void
+    {
+        foreach (['osm.admin@example.test', 'system.admin@example.test'] as $email) {
+            $this->actingAsEmail($email)->getJson('/api/repository/objectives')
+                ->assertOk()
+                ->assertJsonStructure([['id', 'code', 'title']]);
+        }
+
+        $this->asUser()->getJson('/api/repository/objectives')->assertForbidden();
+    }
+
     public function test_repository_search_can_filter_by_objective(): void
     {
         $g11 = StrategicObjective::where('code', 'G1.1')->value('id');

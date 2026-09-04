@@ -85,7 +85,7 @@ class DocumentRepositoryController extends Controller
     /** Shared query: access scope + filters + relevance ordering when searching. */
     private function run(Request $request, array $filters)
     {
-        $documents = Document::with(['category', 'office', 'uploader', 'objectives'])
+        $documents = Document::with(['category', 'office', 'uploader', 'objectives', 'aiSummary'])
             ->accessibleBy($request->user())
             ->filter($filters)
             ->when(
@@ -111,6 +111,7 @@ class DocumentRepositoryController extends Controller
             'objectives' => $d->objectives->pluck('code'),
             'version_number' => $d->version_number,
             'submitted_at' => $d->submitted_at,
+            'summary' => $d->aiSummary?->summary_text,
         ]);
     }
 }

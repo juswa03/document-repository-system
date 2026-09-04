@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import DashboardShell from './dashboards/DashboardShell';
 import StatusBadge from '../components/StatusBadge';
+import Pager from '../components/Pager';
 import VersionHistoryModal from '../components/VersionHistoryModal';
 import api from '../lib/api';
 import { downloadDocumentFile } from '../lib/download';
@@ -17,49 +18,61 @@ const STATUS_OPTIONS = [
 export default function DocumentRepository() {
   const [categories, setCategories] = useState([]);
   const [offices, setOffices] = useState([]);
+  const [objectives, setObjectives] = useState([]);
 
   const [q, setQ] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [officeId, setOfficeId] = useState('');
+  const [objectiveId, setObjectiveId] = useState('');
   const [status, setStatus] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
 
+  const [nl, setNl] = useState('');
+  const [smartNote, setSmartNote] = useState('');
+
   const [result, setResult] = useState({ data: [], meta: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [historyDoc, setHistoryDoc] = useState(null);
+  const [detailId, setDetailId] = useState(null);
 
   const params = useMemo(
     () => ({
       q: q || undefined,
       category_id: categoryId || undefined,
       office_id: officeId || undefined,
+      objective_id: objectiveId || undefined,
       status: status || undefined,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
       page,
     }),
-    [q, categoryId, officeId, status, dateFrom, dateTo, page]
+    [q, categoryId, officeId, objectiveId, status, dateFrom, dateTo, page]
   );
 
   useEffect(() => {
-    Promise.all([api.get('/categories'), api.get('/offices')])
-      .then(([catRes, officeRes]) => {
+    Promise.all([
+      api.get('/categories'),
+      api.get('/offices'),
+      api.get('/repository/objectives'),
+    ])
+      .then(([catRes, officeRes, objRes]) => {
         setCategories(catRes.data);
         setOffices(officeRes.data);
+        setObjectives(objRes.data);
       })
       .catch(() => {
         // Dropdowns just stay empty if this fails — search still works.
       });
   }, []);
 
-  async function runSearch() {
+  async function runSearch(override) {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.get('/repository/documents', { params });
+      const { data } = await api.get('/repository/documents', { params: override || params });
       setResult({ data: data.data, meta: data.meta });
     } catch (err) {
       setError(err?.response?.data?.message || 'Search failed. Try again.');
@@ -75,17 +88,61 @@ export default function DocumentRepository() {
 
   function handleSearchSubmit(e) {
     e.preventDefault();
+    setSmartNote('');
     setPage(1);
     runSearch();
+  }
+
+  function describe(f) {
+    const bits = [];
+    if (f.q) bits.push(`text "${f.q}"`);
+    if (f.category_id) bits.push(`category ${categories.find((c) => c.id === f.category_id)?.category_name || f.category_id}`);
+    if (f.office_id) bits.push(`office ${offices.find((o) => o.id === f.office_id)?.office_name || f.office_id}`);
+    if (f.status) bits.push(`status ${f.status}`);
+    if (f.date_from) bits.push(`from ${f.date_from}`);
+    if (f.date_to) bits.push(`to ${f.date_to}`);
+    return bits.length ? bits.join(', ') : 'no specific filters';
+  }
+
+  async function runSmartSearch(e) {
+    e.preventDefault();
+    if (!nl.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const { data } = await api.post('/repository/search', { query: nl.trim() });
+      const f = data.interpreted || {};
+      setQ(f.q || '');
+      setCategoryId(f.category_id ? String(f.category_id) : '');
+      setOfficeId(f.office_id ? String(f.office_id) : '');
+      setObjectiveId('');
+      setStatus(f.status || '');
+      setDateFrom(f.date_from || '');
+      setDateTo(f.date_to || '');
+      setPage(1);
+      setResult({ data: data.results.data, meta: data.results.meta });
+      setSmartNote(
+        data.ai
+          ? `Read as: ${describe(f)}. Tweak the filters below and Search to refine.`
+          : `AI is off — ran "${nl.trim()}" as a plain text search.`
+      );
+      setNl('');
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Smart search failed.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   function resetFilters() {
     setQ('');
     setCategoryId('');
     setOfficeId('');
+    setObjectiveId('');
     setStatus('');
     setDateFrom('');
     setDateTo('');
+    setSmartNote('');
     setPage(1);
   }
 
@@ -102,6 +159,40 @@ export default function DocumentRepository() {
       {error && <p className="error-banner">{error}</p>}
 
       <section className="panel">
+        <form className="filter-bar" onSubmit={runSmartSearch} style={{ marginBottom: '0.9rem' }}>
+          <div className="filter-field filter-field--grow">
+            <label htmlFor="nl" style={{ color: 'var(--text-label)' }}>
+              Ask in plain language
+            </label>
+            <input
+              id="nl"
+              type="text"
+              placeholder='e.g. "approved board minutes about the 2027 budget from Head Office"'
+              value={nl}
+              onChange={(e) => setNl(e.target.value)}
+            />
+          </div>
+          <div className="btn-row">
+            <button type="submit" className="btn btn--primary btn-sm" disabled={!nl.trim()}>
+              Smart search
+            </button>
+          </div>
+        </form>
+
+        {smartNote && (
+          <p className="cell-muted" style={{ margin: '0 0 0.9rem' }}>
+            {smartNote}{' '}
+            <button
+              type="button"
+              className="btn btn--outline btn-sm"
+              style={{ marginLeft: '0.4rem' }}
+              onClick={resetFilters}
+            >
+              Clear
+            </button>
+          </p>
+        )}
+
         <form className="filter-bar" onSubmit={handleSearchSubmit}>
           <div className="filter-field filter-field--grow">
             <label htmlFor="q" style={{ color: 'var(--text-label)' }}>
@@ -121,7 +212,7 @@ export default function DocumentRepository() {
               Category
             </label>
             <select id="category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} style={{ color: 'var(--text-value)' }}>
-              <option value="" style={{ color: 'var(--text-value)' }}>Any category</option>
+              <option value="">Any category</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.category_name}</option>
               ))}
@@ -133,9 +224,21 @@ export default function DocumentRepository() {
               Office
             </label>
             <select id="office" value={officeId} onChange={(e) => setOfficeId(e.target.value)} style={{ color: 'var(--text-value)' }}>
-              <option value="" style={{ color: 'var(--text-value)' }}>Any office</option>
+              <option value="">Any office</option>
               {offices.map((o) => (
                 <option key={o.id} value={o.id}>{o.office_name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-field">
+            <label htmlFor="objective" style={{ color: 'var(--text-label)' }}>
+              Objective
+            </label>
+            <select id="objective" value={objectiveId} onChange={(e) => setObjectiveId(e.target.value)} style={{ color: 'var(--text-value)' }}>
+              <option value="">Any objective</option>
+              {objectives.map((o) => (
+                <option key={o.id} value={o.id}>{o.code} — {o.title}</option>
               ))}
             </select>
           </div>
@@ -195,57 +298,63 @@ export default function DocumentRepository() {
                   </tr>
                 )}
                 {result.data.map((d) => (
-                  <tr key={d.id}>
-                    <td className="cell-mono">{d.ref}</td>
-                    <td>{d.title}</td>
-                    <td className="cell-muted">{d.category}</td>
-                    <td className="cell-muted">{d.office}</td>
-                    <td className="cell-muted">{d.uploader}</td>
-                    <td className="cell-muted">{new Date(d.submitted_at).toLocaleDateString()}</td>
-                    <td><StatusBadge status={d.status} /></td>
-                    <td>
-                      <div className="btn-row">
-                        <button className="btn btn--outline btn-sm" onClick={() => handleDownload(d)}>
-                          Download
-                        </button>
-                        {d.version_number > 1 && (
+                  <Fragment key={d.id}>
+                    <tr>
+                      <td className="cell-mono">{d.ref}</td>
+                      <td>{d.title}</td>
+                      <td className="cell-muted">{d.category}</td>
+                      <td className="cell-muted">{d.office}</td>
+                      <td className="cell-muted">{d.uploader}</td>
+                      <td className="cell-muted">{new Date(d.submitted_at).toLocaleDateString()}</td>
+                      <td><StatusBadge status={d.status} /></td>
+                      <td>
+                        <div className="btn-row">
                           <button
                             className="btn btn--outline btn-sm"
-                            onClick={() => setHistoryDoc({ id: d.id, ref: d.ref })}
+                            onClick={() => setDetailId((id) => (id === d.id ? null : d.id))}
                           >
-                            History
+                            {detailId === d.id ? 'Hide' : 'Details'}
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                          <button className="btn btn--outline btn-sm" onClick={() => handleDownload(d)}>
+                            Download
+                          </button>
+                          {d.version_number > 1 && (
+                            <button
+                              className="btn btn--outline btn-sm"
+                              onClick={() => setHistoryDoc({ id: d.id, ref: d.ref })}
+                            >
+                              History
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {detailId === d.id && (
+                      <tr>
+                        <td colSpan={8} style={{ background: 'var(--content-bg, #f8fafc)' }}>
+                          <div style={{ padding: '0.6rem 0.2rem', display: 'grid', gap: '0.5rem' }}>
+                            <div>
+                              <strong>AI summary:</strong>{' '}
+                              {d.summary ? (
+                                d.summary
+                              ) : (
+                                <span className="cell-muted">none generated</span>
+                              )}
+                            </div>
+                            <div className="cell-muted">
+                              Objectives: {d.objectives?.length ? d.objectives.join(', ') : '—'} ·
+                              Retention: {d.retention_status} · Version: v{d.version_number}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
 
-            {result.meta && result.meta.last_page > 1 && (
-              <div className="pager">
-                <span>
-                  Page {result.meta.current_page} of {result.meta.last_page} — {result.meta.total} total
-                </span>
-                <div className="btn-row">
-                  <button
-                    className="btn btn--outline btn-sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    ← Previous
-                  </button>
-                  <button
-                    className="btn btn--outline btn-sm"
-                    disabled={page >= result.meta.last_page}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Next →
-                  </button>
-                </div>
-              </div>
-            )}
+            <Pager meta={result.meta} page={page} onPage={setPage} />
           </>
         )}
       </section>

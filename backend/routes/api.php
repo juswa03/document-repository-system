@@ -26,6 +26,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Models\Category;
 use App\Models\Office;
 use App\Models\RequestType;
+use App\Models\StrategicObjective;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -110,6 +111,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::middleware('role:osm_admin,system_admin')->prefix('repository')->group(function () {
         Route::get('/documents', [DocumentRepositoryController::class, 'index']);
         Route::post('/search', [DocumentRepositoryController::class, 'search']);
+        // Active strategic objectives for the repository's objective filter
+        // — readable by both admin roles, unlike the admin/osm-admin trees.
+        Route::get('/objectives', fn () => response()->json(
+            StrategicObjective::query()->active()->orderBy('code')->get(['id', 'code', 'title'])
+        ));
     });
 
     // Reports (objective 1.4 / §G) — same audience as the repository search.
