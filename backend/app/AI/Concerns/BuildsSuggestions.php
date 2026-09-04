@@ -30,6 +30,40 @@ trait BuildsSuggestions
      */
     abstract protected function structuredCall(string $system, string $user, array $tool): ?array;
 
+    public function interpretSearch(string $query, array $categories, array $offices): ?array
+    {
+        if (! $this->isConfigured() || trim($query) === '') {
+            return null;
+        }
+
+        $result = $this->structuredCall(
+            system: 'You convert a records officer\'s plain-language request into repository '
+                .'search filters. Put the core subject words in "q". Only set category, office, '
+                .'status or the date range when the request clearly implies them; leave them out '
+                .'otherwise. Dates are ISO YYYY-MM-DD.',
+            user: "Request: {$query}\n\nCategories: ".implode(', ', $categories)
+                ."\nOffices: ".implode(', ', $offices),
+            tool: [
+                'name' => 'run_search',
+                'description' => 'Run the repository search with these filters.',
+                'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'q' => ['type' => 'string'],
+                        'category' => ['type' => 'string', 'enum' => [...$categories, '']],
+                        'office' => ['type' => 'string', 'enum' => [...$offices, '']],
+                        'status' => ['type' => 'string', 'enum' => ['', 'pending', 'approved', 'rejected', 'revision']],
+                        'date_from' => ['type' => 'string'],
+                        'date_to' => ['type' => 'string'],
+                    ],
+                    'required' => ['q'],
+                ],
+            ],
+        );
+
+        return $result === null ? null : $result[0];
+    }
+
     public function classify(DocumentContext $document, array $categories): ?Suggestion
     {
         if (! $this->isConfigured() || $categories === []) {

@@ -1,5 +1,6 @@
 <?php
 
+use App\Authorization\RoleMatrix;
 use App\Http\Controllers\Api\AccessGrantController;
 use App\Http\Controllers\Api\Admin\AiSettingController;
 use App\Http\Controllers\Api\Admin\AuditLogController;
@@ -18,7 +19,6 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RetentionController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SubmissionController;
-use App\Authorization\RoleMatrix;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Models\Category;
@@ -93,6 +93,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // both admin roles can browse it, unlike the user's own submissions.
     Route::middleware('role:osm_admin,system_admin')->prefix('repository')->group(function () {
         Route::get('/documents', [DocumentRepositoryController::class, 'index']);
+        Route::post('/search', [DocumentRepositoryController::class, 'search']);
     });
 
     // Reports (objective 1.4 / §G) — same audience as the repository search.

@@ -69,4 +69,17 @@ interface AiProvider
      * @param  list<string>  $accessLevels  the levels to choose from
      */
     public function checkConfidentiality(DocumentContext $document, array $accessLevels): ?Suggestion;
+
+    /**
+     * Turn a natural-language repository query into structured search
+     * filters (FR-10). Returns a loose map — {q, category, office,
+     * status, date_from, date_to} — or null when the layer is off. The
+     * caller resolves names to ids and discards anything it doesn't
+     * recognise; a plain text search is always the fallback.
+     *
+     * @param  list<string>  $categories
+     * @param  list<string>  $offices
+     * @return array<string, mixed>|null
+     */
+    public function interpretSearch(string $query, array $categories, array $offices): ?array;
 }

@@ -48,4 +48,9 @@ class NullProvider implements AiProvider
     {
         return null;
     }
+
+    public function interpretSearch(string $query, array $categories, array $offices): ?array
+    {
+        return null;
+    }
 }

@@ -85,9 +85,27 @@ class Document extends Model
             ->unless(($filters['include_superseded'] ?? false) || ($filters['retention_status'] ?? false),
                 fn (Builder $q) => $q->where('retention_status', 'active'))
             ->when($filters['q'] ?? null, function (Builder $q, string $term) {
-                $q->where(function (Builder $qq) use ($term) {
-                    $qq->where('title', 'like', "%{$term}%")
-                        ->orWhere('tracking_no', 'like', "%{$term}%");
+                // Content search (FR-10). FULLTEXT over title / description /
+                // keywords / extracted text drives relevance; a per-token
+                // LIKE sweep is the correctness backstop (short terms,
+                // tracking numbers, and multi-word natural-language input
+                // that isn't a contiguous phrase).
+                $stop = ['the', 'and', 'for', 'from', 'with', 'that', 'this', 'about', 'any', 'all'];
+                $tokens = array_values(array_filter(
+                    preg_split('/\s+/', trim($term)),
+                    fn ($t) => mb_strlen($t) >= 3 && ! in_array(mb_strtolower($t), $stop, true),
+                )) ?: [$term];
+
+                $q->where(function (Builder $qq) use ($term, $tokens) {
+                    $qq->whereFullText(['title', 'description', 'keywords', 'extracted_text'], $term);
+                    foreach ($tokens as $tok) {
+                        $like = '%'.$tok.'%';
+                        $qq->orWhere('title', 'like', $like)
+                            ->orWhere('description', 'like', $like)
+                            ->orWhere('keywords', 'like', $like)
+                            ->orWhere('extracted_text', 'like', $like)
+                            ->orWhere('tracking_no', 'like', $like);
+                    }
                 });
             })
             ->when($filters['category_id'] ?? null, fn (Builder $q, $v) => $q->where('category_id', $v))

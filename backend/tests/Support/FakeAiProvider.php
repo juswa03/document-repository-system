@@ -24,6 +24,9 @@ class FakeAiProvider implements AiProvider
 
     public ?Suggestion $confidentiality = null;
 
+    /** @var array<string, mixed>|null */
+    public ?array $searchFilters = null;
+
     public int $classifyCalls = 0;
 
     public function isConfigured(): bool
@@ -61,5 +64,10 @@ class FakeAiProvider implements AiProvider
     public function checkConfidentiality(DocumentContext $document, array $accessLevels): ?Suggestion
     {
         return $this->confidentiality;
+    }
+
+    public function interpretSearch(string $query, array $categories, array $offices): ?array
+    {
+        return $this->searchFilters;
     }
 }
