@@ -22,6 +22,15 @@ export async function downloadReportCsv(key, params = {}) {
   saveBlob(response.data, `${key}-${new Date().toISOString().slice(0, 10)}.csv`);
 }
 
+/** Authenticated audit-log export (Phase 17) — same endpoint, ?format=csv. */
+export async function downloadAuditLogCsv(params = {}) {
+  const response = await api.get('/admin/audit-log', {
+    params: { ...params, format: 'csv' },
+    responseType: 'blob',
+  });
+  saveBlob(response.data, `audit-log-${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
 function saveBlob(data, filename) {
   const url = window.URL.createObjectURL(new Blob([data]));
   const link = document.createElement('a');
