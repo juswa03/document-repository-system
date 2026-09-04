@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Required check: everything that already behaves per the process-flow
+  # document, plus regression guards. Must stay green.
+  gate:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ''
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: document_repository_system_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s --health-timeout=3s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql, mbstring, bcmath, gd, zip
+          coverage: none
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Prepare app
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+      - name: Run the gate suite
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: document_repository_system_test
+          DB_USERNAME: root
+          DB_PASSWORD: ''
+        run: php artisan test --exclude-group=remediation-target
+
+  # Visibility only: the conformance targets that a remediation phase
+  # still has to close. Not required — tracks progress toward sign-off.
+  remediation-progress:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ''
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: document_repository_system_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s --health-timeout=3s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql, mbstring, bcmath, gd, zip
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: |
+          cp .env.example .env
+          php artisan key:generate
+      - env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: document_repository_system_test
+          DB_USERNAME: root
+          DB_PASSWORD: ''
+        run: php artisan test --group=remediation-target

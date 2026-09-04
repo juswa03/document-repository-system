@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Not in the ERD — added so the "deactivate" action on the system admin
+ * dashboard has somewhere to persist. Safe to drop if you'd rather model
+ * deactivation a different way (e.g. a status column).
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->boolean('is_active')->default(true)->after('office_id');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('is_active');
+        });
+    }
+};

@@ -1,0 +1,123 @@
+.bell-wrap {
+  position: relative;
+}
+
+.bell-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.bell-btn:hover {
+  border-color: var(--primary-hover);
+  color: var(--seal-deep);
+}
+
+.bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: white;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.bell-dropdown {
+  position: absolute;
+  top: calc(90% + 0.6rem);
+  right: 0;
+  width: 320px;
+  max-height: 380px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  color: var(--text-primary);
+  padding: 0.5rem;
+}
+
+/* Arrow pointing up toward the bell icon */
+.bell-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 20px;                  /* adjust to align with bell icon */
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  transform: rotate(45deg);
+  z-index: 1;
+}
+
+.bell-dropdown-header {
+  padding: 0.75rem 1rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-label);
+  border-bottom: 1px solid var(--line);
+}
+
+.bell-empty {
+  padding: 1.25rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-value);
+  margin: 0;
+}
+
+.bell-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bell-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.bell-item:last-child {
+  border-bottom: none;
+}
+
+.bell-item.is-unread {
+  background: rgba(46, 110, 88, 0.06);
+}
+
+.bell-item:hover {
+  background: rgba(145, 128, 128, 0.06);
+}
+
+.bell-message {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text-value);
+}
+
+.bell-time {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}

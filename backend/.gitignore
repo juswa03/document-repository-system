@@ -1,0 +1,60 @@
+# Laravel / Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies
+/vendor/
+
+node_modules/
+
+# Laravel storage
+/storage/*.key
+/storage/app/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+
+!/storage/app/
+!/storage/app/public/
+!/storage/framework/
+!/storage/framework/cache/
+!/storage/framework/sessions/
+!/storage/framework/testing/
+!/storage/framework/views/
+!/storage/logs/
+
+/public/storage
+
+/bootstrap/cache/*.php
+
+# Testing / coverage
+.phpunit.result.cache
+.phpunit.cache/
+coverage/
+
+
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# PHP CS Fixer
+.php-cs-fixer.cache
+
+# Laravel Pint
+.php-cs-fixer.cache
+
+# Local development
+Homestead.yaml
+Homestead.json
+
+# Docker override
+docker-compose.override.yml

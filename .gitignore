@@ -1,0 +1,69 @@
+# ─────────────────────────────────────────────────────────────
+# Monorepo root .gitignore
+# (backend/.gitignore and frontend/.gitignore still apply within
+#  their folders — these entries are the cross-cutting backstop.)
+# ─────────────────────────────────────────────────────────────
+
+# Internal working docs — not published in this repo
+docs/
+
+# Secrets / environment — never commit real .env files
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Dependencies
+**/vendor/
+**/node_modules/
+
+# Frontend build output
+frontend/dist/
+frontend/build/
+
+# Laravel storage & cache (keep the folder structure, drop the contents)
+backend/storage/*.key
+backend/storage/app/*
+!backend/storage/app/.gitignore
+!backend/storage/app/public/
+backend/storage/app/public/*
+!backend/storage/app/public/.gitignore
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/testing/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+!backend/storage/**/.gitignore
+backend/bootstrap/cache/*.php
+backend/public/storage
+
+# Test / tooling caches
+**/.phpunit.result.cache
+**/.phpunit.cache/
+**/coverage/
+**/.php-cs-fixer.cache
+**/*.tsbuildinfo
+**/.vite/
+**/.cache/
+
+# Recovered old repo histories (kept outside the tree; ignore if copied in)
+**/.git.old/
+_git_backup_*/
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
