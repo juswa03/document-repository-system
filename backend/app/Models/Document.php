@@ -38,6 +38,8 @@ class Document extends Model
         'access_level',
         'keywords',
         'description',
+        'extracted_text',
+        'text_extracted_at',
         'remarks',
         'category_id',
         'uploaded_by',
@@ -62,6 +64,7 @@ class Document extends Model
         return [
             'submitted_at' => 'datetime',
             'document_date' => 'date',
+            'text_extracted_at' => 'datetime',
             'assigned_at' => 'datetime',
             'archived_at' => 'datetime',
             'disposed_at' => 'datetime',

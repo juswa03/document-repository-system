@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\AnalyzeDocument;
+use App\Jobs\ExtractDocumentText;
 use App\LeadTime\Target;
 use App\Models\AuditLog;
 use App\Models\Category;
@@ -21,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SubmissionController extends Controller
 {
@@ -387,6 +389,7 @@ class SubmissionController extends Controller
             );
         }
 
+        ExtractDocumentText::dispatch($document);
         AnalyzeDocument::dispatch($document);
 
         $payload = $this->formatDocument($document->load('category'));
@@ -518,6 +521,7 @@ class SubmissionController extends Controller
             ]
         );
 
+        ExtractDocumentText::dispatch($document);
         AnalyzeDocument::dispatch($document);
 
         return response()->json($this->formatDocument($document->load(['category', 'review'])));
@@ -761,7 +765,7 @@ class SubmissionController extends Controller
 
         $amount = $data['amount'] ?? $existing?->amount;
         if ($amount === null || $amount === '') {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'amount' => 'This request type needs an amount.',
             ]);
         }
@@ -885,7 +889,7 @@ class SubmissionController extends Controller
                 ['reason' => $result->reason],
             );
 
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'file' => 'This file was rejected by malware scanning.',
             ]);
         }
@@ -904,7 +908,7 @@ class SubmissionController extends Controller
             );
 
             if (! $failOpen) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'file' => 'Uploads are temporarily unavailable — the malware scanner could not be reached.',
                 ]);
             }
