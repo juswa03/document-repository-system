@@ -6,7 +6,12 @@ const KIND_LABEL = {
   completeness: 'Completeness',
   metadata: 'Metadata clean-up',
   confidentiality: 'Access level',
+  summary: 'Summary',
+  near_duplicate: 'Possible duplicate',
 };
+
+// Kinds where "accept" is an acknowledgement, not a field change.
+const ACK_KINDS = new Set(['completeness', 'near_duplicate']);
 
 function SuggestionBody({ row }) {
   const d = row.data || {};
@@ -46,6 +51,27 @@ function SuggestionBody({ row }) {
       </ul>
     ) : (
       <p className="ai-sugg-detail">No changes suggested.</p>
+    );
+  }
+  if (row.kind === 'summary') {
+    const points = Array.isArray(d.key_points) ? d.key_points : [];
+    return (
+      <div className="ai-sugg-detail">
+        <p>{d.summary || '—'}</p>
+        {points.length > 0 && (
+          <ul>
+            {points.map((p, i) => <li key={i}>{p}</li>)}
+          </ul>
+        )}
+      </div>
+    );
+  }
+  if (row.kind === 'near_duplicate') {
+    return (
+      <p className="ai-sugg-detail">
+        Looks similar to <strong>{d.duplicate_of || 'an existing document'}</strong>
+        {d.similarity != null && <> — {Math.round(d.similarity * 100)}% text overlap</>}.
+      </p>
     );
   }
   return null;
@@ -113,7 +139,11 @@ export default function AiSuggestionPanel({ documentId }) {
                 disabled={busyId === row.id}
                 onClick={() => resolve(row.id, 'accept')}
               >
-                {row.kind === 'completeness' ? 'Acknowledge' : 'Accept & apply'}
+                {ACK_KINDS.has(row.kind)
+                  ? 'Acknowledge'
+                  : row.kind === 'summary'
+                    ? 'Accept & save'
+                    : 'Accept & apply'}
               </button>
               <button
                 className="btn btn--outline btn-sm"

@@ -8,12 +8,62 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
 import { downloadDocumentFile } from '../../lib/download';
 import './dashboards.css';
+import './OsmAdminDashboard.css';
 
 const SCOPES = [
   { key: 'all', label: 'All pending' },
   { key: 'unassigned', label: 'Unassigned' },
   { key: 'mine', label: 'Assigned to me' },
 ];
+
+function fmtSize(bytes) {
+  if (!bytes && bytes !== 0) return null;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Read-only metadata the API already returns for a queue item. */
+function DetailGrid({ item }) {
+  const rows =
+    item.kind === 'document'
+      ? [
+          ['Title', item.title],
+          ['Category', item.category],
+          ['Document type', item.document_type],
+          ['Document date', item.document_date],
+          ['Reporting period', item.reporting_period],
+          ['Access level', item.access_level],
+          ['Version', item.version_number ? `v${item.version_number}` : null],
+          [
+            'File',
+            [item.file_format, fmtSize(item.file_size)].filter(Boolean).join(' · ') || null,
+          ],
+          ['Keywords', item.keywords],
+          ['Description', item.description],
+          ['Uploader remarks', item.uploader_remarks],
+        ]
+      : [
+          ['Title', item.title],
+          ['Request type', item.type],
+          ['Needed by', item.needed_by],
+          ['Amount', item.amount],
+          ['Access level', item.access_level],
+          ['Description', item.description],
+          ['Uploader remarks', item.uploader_remarks],
+        ];
+
+  return (
+    <dl className="detail-grid">
+      {rows.map(([label, value]) => (
+        <div key={label}>
+          <dt>{label}</dt>
+          <dd>{value || <span className="cell-muted">—</span>}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 export default function OsmAdminDashboard() {
   const { user } = useAuth();
@@ -36,6 +86,7 @@ export default function OsmAdminDashboard() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [aiKey, setAiKey] = useState(null);
   const [objKey, setObjKey] = useState(null);
+  const [detailKey, setDetailKey] = useState(null);
 
   async function loadQueue(nextScope = scope) {
     setLoading(true);
@@ -310,6 +361,12 @@ export default function OsmAdminDashboard() {
                       <td className="cell-muted">{new Date(item.submitted_at).toLocaleDateString()}</td>
                       <td>
                         <div className="btn-row">
+                          <button
+                            className="btn btn--outline btn-sm"
+                            onClick={() => setDetailKey((k) => (k === key ? null : key))}
+                          >
+                            {detailKey === key ? 'Hide details' : 'Details'}
+                          </button>
                           {item.kind === 'document' && (
                             <button className="btn btn--outline btn-sm" onClick={() => handleDownload(item)}>
                               Download
@@ -348,6 +405,19 @@ export default function OsmAdminDashboard() {
                         </div>
                       </td>
                     </tr>
+
+                    {detailKey === key && (
+                      <tr>
+                        <td colSpan={6}>
+                          <div className="inline-form">
+                            <h3 className="panel-title" style={{ fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                              Submission details
+                            </h3>
+                            <DetailGrid item={item} />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
 
                     {aiKey === key && item.kind === 'document' && (
                       <tr>
