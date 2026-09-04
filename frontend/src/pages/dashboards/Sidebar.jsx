@@ -56,6 +56,7 @@ const NAV_BY_ROLE = {
       group: 'Records',
       items: [
         { icon: Archive, label: 'Document repository', to: '/repository' },
+        { icon: Archive, label: 'Retention', to: '/osm-admin/retention' },
         { icon: BarChart3, label: 'Reports', to: '/reports' },
       ],
     },

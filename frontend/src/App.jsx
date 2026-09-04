@@ -13,6 +13,7 @@ import ManageLookups from './pages/dashboards/ManageLookups';
 import ManageRequiredDocuments from './pages/dashboards/ManageRequiredDocuments';
 import Governance from './pages/dashboards/Governance';
 import OsmAdminDashboard from './pages/dashboards/OsmAdminDashboard';
+import RetentionScreen from './pages/dashboards/RetentionScreen';
 import UserDashboard from './pages/dashboards/UserDashboard';
 import DocumentRepository from './pages/DocumentRepository';
 
@@ -117,6 +118,14 @@ export default function App() {
             element={
               <ProtectedRoute roles={['osm_admin']}>
                 <OsmAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/osm-admin/retention"
+            element={
+              <ProtectedRoute roles={['osm_admin']}>
+                <RetentionScreen />
               </ProtectedRoute>
             }
           />

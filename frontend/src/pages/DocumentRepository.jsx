@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import DashboardShell from './dashboards/DashboardShell';
 import StatusBadge from '../components/StatusBadge';
+import VersionHistoryModal from '../components/VersionHistoryModal';
 import api from '../lib/api';
 import { downloadDocumentFile } from '../lib/download';
 import '../pages/dashboards/dashboards.css';
@@ -28,6 +29,7 @@ export default function DocumentRepository() {
   const [result, setResult] = useState({ data: [], meta: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [historyDoc, setHistoryDoc] = useState(null);
 
   const params = useMemo(
     () => ({
@@ -108,7 +110,7 @@ export default function DocumentRepository() {
             <input
               id="q"
               type="text"
-              placeholder="Title or tracking number"
+              placeholder="Words in the title, tracking number, or document text"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -202,9 +204,19 @@ export default function DocumentRepository() {
                     <td className="cell-muted">{new Date(d.submitted_at).toLocaleDateString()}</td>
                     <td><StatusBadge status={d.status} /></td>
                     <td>
-                      <button className="btn btn--outline btn-sm" onClick={() => handleDownload(d)}>
-                        Download
-                      </button>
+                      <div className="btn-row">
+                        <button className="btn btn--outline btn-sm" onClick={() => handleDownload(d)}>
+                          Download
+                        </button>
+                        {d.version_number > 1 && (
+                          <button
+                            className="btn btn--outline btn-sm"
+                            onClick={() => setHistoryDoc({ id: d.id, ref: d.ref })}
+                          >
+                            History
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -237,6 +249,14 @@ export default function DocumentRepository() {
           </>
         )}
       </section>
+
+      {historyDoc && (
+        <VersionHistoryModal
+          documentId={historyDoc.id}
+          reference={historyDoc.ref}
+          onClose={() => setHistoryDoc(null)}
+        />
+      )}
     </DashboardShell>
   );
 }
