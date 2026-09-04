@@ -50,17 +50,27 @@ class StrategicObjective extends Model
     }
 
     /**
-     * The tree, roots first, every node carrying its linked-document
-     * count (`documents_count`) and its children two levels deep.
+     * The tree, roots first, to any depth. Every node carries its
+     * linked-document count (`documents_count`) and a populated
+     * `children` relation, built from a single query.
      */
     public static function tree(): Collection
     {
-        $withCounts = fn ($q) => $q->withCount('documents')->orderBy('sort_order')->orderBy('code');
-
-        return static::withCount('documents')
-            ->with(['children' => fn ($q) => $withCounts($q)->with(['children' => $withCounts])])
-            ->whereNull('parent_id')
+        $all = static::withCount('documents')
             ->orderBy('sort_order')->orderBy('code')
             ->get();
+
+        $childrenOf = $all->groupBy('parent_id');
+
+        $build = function (self $node) use (&$build, $childrenOf) {
+            $node->setRelation(
+                'children',
+                ($childrenOf[$node->id] ?? new Collection)->map($build)->values()
+            );
+
+            return $node;
+        };
+
+        return $all->whereNull('parent_id')->map($build)->values();
     }
 }

@@ -35,6 +35,19 @@ export default function ManageObjectives() {
     load();
   }, [load]);
 
+  async function toggleActive(node) {
+    setBusyId(node.id);
+    setError('');
+    try {
+      await api.patch(`/admin/strategic-objectives/${node.id}`, { is_active: !node.is_active });
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Could not update that objective.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function remove(node) {
     const warn =
       node.document_count > 0
@@ -77,19 +90,24 @@ export default function ManageObjectives() {
           </td>
           <td>
             <div className="btn-row">
-              {depth === 0 && (
-                <button
-                  className="btn btn--outline btn-sm"
-                  onClick={() => setModal({ mode: 'create', parentId: node.id })}
-                >
-                  Add sub-objective
-                </button>
-              )}
+              <button
+                className="btn btn--outline btn-sm"
+                onClick={() => setModal({ mode: 'create', parentId: node.id })}
+              >
+                Add sub-objective
+              </button>
               <button
                 className="btn btn--outline btn-sm"
                 onClick={() => setModal({ mode: 'edit', item: flatFor(node) })}
               >
                 Edit
+              </button>
+              <button
+                className="btn btn--outline btn-sm"
+                disabled={busyId === node.id}
+                onClick={() => toggleActive(node)}
+              >
+                {node.is_active ? 'Deactivate' : 'Reactivate'}
               </button>
               <button
                 className="btn btn--danger-outline btn-sm"
@@ -158,8 +176,9 @@ export default function ManageObjectives() {
           <div>
             <h2 className="panel-title">Objective tree</h2>
             <p className="panel-subtitle">
-              Goals are top level; add sub-objectives beneath them. A goal with linked documents can
-              still be edited or removed — its documents are simply unlinked.
+              Goals are top level; nest sub-objectives beneath any node to whatever depth the plan
+              needs. Deactivate an objective to keep it on existing documents but hide it from the
+              reviewer's picker. Removing a node unlinks its documents and re-parents its children.
             </p>
           </div>
           <div className="btn-row">

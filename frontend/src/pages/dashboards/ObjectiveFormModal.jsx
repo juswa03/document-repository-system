@@ -17,9 +17,28 @@ export default function ObjectiveFormModal({ mode, item, parentId, flat, onClose
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // A node can't be its own parent or (kept simple) a child of one of its
-  // own descendants — hide itself from the list.
-  const parentOptions = (flat || []).filter((o) => o.id !== item?.id);
+  // A node can't be its own parent or a child of one of its own
+  // descendants — drop itself and everything beneath it from the list.
+  const nodes = flat || [];
+  const depthOf = (o) => {
+    let d = 0;
+    let cur = o;
+    while (cur?.parent_id) {
+      cur = nodes.find((n) => n.id === cur.parent_id);
+      d += 1;
+      if (d > 20) break;
+    }
+    return d;
+  };
+  const isUnder = (o, ancestorId) => {
+    let cur = o;
+    while (cur?.parent_id) {
+      if (cur.parent_id === ancestorId) return true;
+      cur = nodes.find((n) => n.id === cur.parent_id);
+    }
+    return false;
+  };
+  const parentOptions = nodes.filter((o) => o.id !== item?.id && !(item && isUnder(o, item.id)));
 
   async function submit(e) {
     e.preventDefault();
@@ -98,6 +117,7 @@ export default function ObjectiveFormModal({ mode, item, parentId, flat, onClose
             <option value="">— none (this is a top-level goal) —</option>
             {parentOptions.map((o) => (
               <option key={o.id} value={o.id}>
+                {'  '.repeat(depthOf(o))}
                 {o.code} — {o.title}
               </option>
             ))}

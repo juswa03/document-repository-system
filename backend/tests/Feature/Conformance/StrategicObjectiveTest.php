@@ -60,6 +60,47 @@ class StrategicObjectiveTest extends ConformanceTestCase
             ->assertStatus(422);
     }
 
+    public function test_the_tree_nests_to_an_arbitrary_depth(): void
+    {
+        $g1 = StrategicObjective::where('code', 'G1')->first();
+        $sub = StrategicObjective::where('parent_id', $g1->id)->first();
+
+        $leaf = StrategicObjective::create([
+            'code' => 'G1.1.1',
+            'title' => 'Third-level objective',
+            'parent_id' => $sub->id,
+        ]);
+
+        $tree = $this->asSystemAdmin()->getJson('/api/admin/strategic-objectives')->assertOk()->json('tree');
+
+        $g1Node = collect($tree)->firstWhere('code', 'G1');
+        $subNode = collect($g1Node['children'])->firstWhere('id', $sub->id);
+        $this->assertContains('G1.1.1', collect($subNode['children'])->pluck('code'));
+    }
+
+    public function test_a_node_cannot_be_moved_under_its_own_descendant(): void
+    {
+        $g1 = StrategicObjective::where('code', 'G1')->first();
+        $sub = StrategicObjective::where('parent_id', $g1->id)->first();
+
+        $this->asSystemAdmin()
+            ->patchJson("/api/admin/strategic-objectives/{$g1->id}", ['parent_id' => $sub->id])
+            ->assertStatus(422);
+
+        $this->assertNull($g1->fresh()->parent_id);
+    }
+
+    public function test_an_objective_can_be_deactivated_in_place(): void
+    {
+        $g1 = StrategicObjective::where('code', 'G1')->first();
+
+        $this->asSystemAdmin()
+            ->patchJson("/api/admin/strategic-objectives/{$g1->id}", ['is_active' => false])
+            ->assertOk();
+
+        $this->assertFalse($g1->fresh()->is_active);
+    }
+
     public function test_deleting_a_goal_detaches_its_children(): void
     {
         $g2 = StrategicObjective::where('code', 'G2')->first();

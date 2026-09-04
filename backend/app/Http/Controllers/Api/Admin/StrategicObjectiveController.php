@@ -55,8 +55,14 @@ class StrategicObjectiveController extends Controller
     {
         $data = $this->validated($request, $strategicObjective);
 
-        if (($data['parent_id'] ?? null) === $strategicObjective->id) {
-            return response()->json(['message' => 'An objective cannot be its own parent.'], 422);
+        if (array_key_exists('parent_id', $data) && $data['parent_id'] !== null) {
+            $newParentId = (int) $data['parent_id'];
+
+            if ($newParentId === $strategicObjective->id || $this->wouldCycle($strategicObjective, $newParentId)) {
+                return response()->json([
+                    'message' => 'An objective cannot be moved under itself or one of its own sub-objectives.',
+                ], 422);
+            }
         }
 
         $strategicObjective->update($data);
@@ -84,6 +90,24 @@ class StrategicObjectiveController extends Controller
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:9999'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+    }
+
+    /**
+     * Walking up from $newParentId, do we reach $node? If so, re-parenting
+     * $node under it would create a cycle.
+     */
+    private function wouldCycle(StrategicObjective $node, int $newParentId): bool
+    {
+        $cursor = StrategicObjective::find($newParentId);
+
+        while ($cursor !== null) {
+            if ($cursor->id === $node->id) {
+                return true;
+            }
+            $cursor = $cursor->parent_id ? StrategicObjective::find($cursor->parent_id) : null;
+        }
+
+        return false;
     }
 
     private function node(StrategicObjective $o): array
