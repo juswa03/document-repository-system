@@ -31,7 +31,10 @@ export default function AuditLog() {
         <div className="panel-header">
           <div>
             <h2 className="panel-title">Activity history</h2>
-            <p className="panel-subtitle">Every approval decision and account change.</p>
+            <p className="panel-subtitle">
+              Every upload, download, review decision, access grant, retention action, AI action,
+              sign-in and settings change — always recorded.
+            </p>
           </div>
         </div>
 
@@ -52,7 +55,7 @@ export default function AuditLog() {
                 {entries.length === 0 && (
                   <tr>
                     <td colSpan={4} className="empty-row">
-                      No activity recorded yet — or audit logging is turned off in System settings.
+                      No activity recorded yet.
                     </td>
                   </tr>
                 )}

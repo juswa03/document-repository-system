@@ -6,6 +6,7 @@ use App\AI\AiSettings;
 use App\AI\Contracts\AiProvider;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\DocumentAiSuggestion;
 use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -97,7 +98,7 @@ class AiSettingController extends Controller
         $settings = SystemSetting::current();
         $effective = AiSettings::fromCurrent();
 
-        $models = collect(config("ai.providers.{$settings->ai_provider}.models", []))
+        $modelsFor = fn (string $provider) => collect(config("ai.providers.{$provider}.models", []))
             ->map(fn (array $m, string $id) => ['id' => $id] + $m)
             ->values();
 
@@ -109,8 +110,11 @@ class AiSettingController extends Controller
             'ai_confidence_threshold' => (float) $settings->ai_confidence_threshold,
             'key_present' => $effective->hasKey(),
             'operational' => app(AiProvider::class)->isConfigured(),
+            'spend_this_month_usd' => DocumentAiSuggestion::spendThisMonth(),
             'providers' => array_keys(config('ai.providers')),
-            'available_models' => $models,
+            'available_models' => $modelsFor($settings->ai_provider),
+            'models_by_provider' => collect(config('ai.providers'))
+                ->mapWithKeys(fn ($_, $p) => [$p => $modelsFor($p)]),
         ];
     }
 }

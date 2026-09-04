@@ -30,6 +30,7 @@ class AiSettingsTest extends ConformanceTestCase
         $body = $this->asSystemAdmin()->getJson('/api/admin/ai-settings')
             ->assertOk()
             ->assertJsonStructure([
+                'spend_this_month_usd', 'models_by_provider',
                 'ai_enabled', 'ai_provider', 'ai_model', 'ai_monthly_cap_usd',
                 'ai_confidence_threshold', 'key_present', 'operational',
                 'providers', 'available_models',

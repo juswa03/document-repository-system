@@ -70,12 +70,30 @@ export default function SystemSettings() {
               </label>
             </div>
 
-            {/*
-              The "Audit logging" toggle was removed: the audit trail is
-              always on (backend Phase 1.2 — every upload, download,
-              review, sign-in and settings change is recorded and this
-              cannot be disabled).
-            */}
+            <div className="toggle-row">
+              <div className="toggle-copy">
+                <p style={{ color: 'var(--text-label)' }}>Audit logging</p>
+                <span style={{ color: 'var(--text-value)' }}>
+                  Always on. Every upload, download, review decision, access grant, retention
+                  action, AI action, sign-in and settings change is recorded and cannot be
+                  disabled (BR-06 / PF-18).
+                </span>
+              </div>
+              <span className="badge badge--active">Enforced</span>
+            </div>
+
+            <div className="toggle-row">
+              <div className="toggle-copy">
+                <p style={{ color: 'var(--text-label)' }}>AI agent layer</p>
+                <span style={{ color: 'var(--text-value)' }}>
+                  Provider, model, spend cap and confidence threshold are managed on their own
+                  screen.
+                </span>
+              </div>
+              <Link to="/admin/ai-settings" className="btn btn--outline btn-sm">
+                AI settings →
+              </Link>
+            </div>
           </>
         )}
       </section>

@@ -9,6 +9,7 @@ import ManageUsers from './pages/dashboards/ManageUsers';
 import ManageRoles from './pages/dashboards/ManageRoles';
 import SystemSettings from './pages/dashboards/SystemSettings';
 import AuditLog from './pages/dashboards/AuditLog';
+import AiSettings from './pages/dashboards/AiSettings';
 import ManageLookups from './pages/dashboards/ManageLookups';
 import ManageObjectives from './pages/dashboards/ManageObjectives';
 import ManageRequiredDocuments from './pages/dashboards/ManageRequiredDocuments';
@@ -77,6 +78,14 @@ export default function App() {
             element={
               <ProtectedRoute roles={['system_admin']}>
                 <SystemSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/ai-settings"
+            element={
+              <ProtectedRoute roles={['system_admin']}>
+                <AiSettings />
               </ProtectedRoute>
             }
           />
