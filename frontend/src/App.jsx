@@ -10,6 +10,7 @@ import ManageRoles from './pages/dashboards/ManageRoles';
 import SystemSettings from './pages/dashboards/SystemSettings';
 import AuditLog from './pages/dashboards/AuditLog';
 import ManageLookups from './pages/dashboards/ManageLookups';
+import ManageObjectives from './pages/dashboards/ManageObjectives';
 import ManageRequiredDocuments from './pages/dashboards/ManageRequiredDocuments';
 import Governance from './pages/dashboards/Governance';
 import OsmAdminDashboard from './pages/dashboards/OsmAdminDashboard';
@@ -108,6 +109,14 @@ export default function App() {
             element={
               <ProtectedRoute roles={['system_admin']}>
                 <Governance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/objectives"
+            element={
+              <ProtectedRoute roles={['system_admin']}>
+                <ManageObjectives />
               </ProtectedRoute>
             }
           />

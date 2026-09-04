@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import StatusBadge from '../../components/StatusBadge';
 import AiSuggestionPanel from '../../components/AiSuggestionPanel';
+import ObjectivePicker from '../../components/ObjectivePicker';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
 import { downloadDocumentFile } from '../../lib/download';
@@ -30,6 +31,7 @@ export default function OsmAdminDashboard() {
   const [busyKey, setBusyKey] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [aiKey, setAiKey] = useState(null);
+  const [objKey, setObjKey] = useState(null);
 
   async function loadQueue(nextScope = scope) {
     setLoading(true);
@@ -309,6 +311,14 @@ export default function OsmAdminDashboard() {
                               {aiKey === key ? 'Hide AI review' : 'AI review'}
                             </button>
                           )}
+                          {item.kind === 'document' && (
+                            <button
+                              className="btn btn--outline btn-sm"
+                              onClick={() => setObjKey((k) => (k === key ? null : key))}
+                            >
+                              {objKey === key ? 'Hide objectives' : 'Objectives'}
+                            </button>
+                          )}
                           <button
                             className="btn btn--primary btn-sm"
                             disabled={isBusy}
@@ -335,6 +345,19 @@ export default function OsmAdminDashboard() {
                               AI review — suggestions (nothing is applied until you accept)
                             </h3>
                             <AiSuggestionPanel documentId={item.id} />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+
+                    {objKey === key && item.kind === 'document' && (
+                      <tr>
+                        <td colSpan={6}>
+                          <div className="inline-form">
+                            <h3 className="panel-title" style={{ fontSize: '0.95rem', marginBottom: '0.4rem' }}>
+                              Strategic objectives this document supports
+                            </h3>
+                            <ObjectivePicker documentId={item.id} />
                           </div>
                         </td>
                       </tr>

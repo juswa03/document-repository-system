@@ -125,7 +125,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('/documents/{document}/access-grants', [AccessGrantController::class, 'store']);
         Route::delete('/access-grants/{accessGrant}', [AccessGrantController::class, 'destroy']);
 
-        // Strategic-objective links on a document (Phase 11).
+        // Strategic-objective links on a document (Phase 11). The tree
+        // itself is read-only here so a reviewer can pick from it.
+        Route::get('/strategic-objectives', [StrategicObjectiveController::class, 'index']);
         Route::get('/documents/{document}/objectives', [DocumentObjectiveController::class, 'index']);
         Route::put('/documents/{document}/objectives', [DocumentObjectiveController::class, 'sync']);
 

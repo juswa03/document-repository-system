@@ -95,6 +95,15 @@ class StrategicObjectiveTest extends ConformanceTestCase
         $this->asUser()->putJson("/api/osm-admin/documents/{$doc->id}/objectives", ['objective_ids' => []])->assertForbidden();
     }
 
+    public function test_an_osm_admin_can_read_the_tree_to_pick_from_but_not_edit_it(): void
+    {
+        $this->asOsmAdmin()->getJson('/api/osm-admin/strategic-objectives')
+            ->assertOk()->assertJsonStructure(['tree', 'flat']);
+
+        $this->asOsmAdmin()->postJson('/api/admin/strategic-objectives', ['code' => 'Z9', 'title' => 'x'])
+            ->assertForbidden();
+    }
+
     public function test_repository_search_can_filter_by_objective(): void
     {
         $g11 = StrategicObjective::where('code', 'G1.1')->value('id');
