@@ -54,6 +54,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     // Notifications — any authenticated user reads/marks their own.
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::patch('/notifications/{id}', [NotificationController::class, 'markRead']);
 
     // Document download — ownership/role check happens inside the

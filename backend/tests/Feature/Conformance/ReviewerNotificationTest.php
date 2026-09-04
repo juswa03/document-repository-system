@@ -4,7 +4,6 @@ namespace Tests\Feature\Conformance;
 
 use App\Models\Document;
 use App\Models\Notification;
-use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -33,16 +32,20 @@ class ReviewerNotificationTest extends ConformanceTestCase
             ->postJson('/api/dashboard/documents', $this->documentPayload())
             ->assertCreated()->json('ref');
 
+        // office_queue routing (the default) leaves the item unassigned,
+        // so the whole OSM pool gets the lighter "review_queue" nudge
+        // (in-app only); "review_pending" is reserved for a direct handoff.
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->userId('osm.admin@example.test'),
-            'type' => 'review_pending',
+            'type' => 'review_queue',
+            'link' => '/osm-admin',
         ]);
-        $this->assertStringContainsString($ref, Notification::where('type', 'review_pending')->value('message'));
+        $this->assertStringContainsString($ref, Notification::where('type', 'review_queue')->value('message'));
 
         // The submitter only gets their own confirmation.
         $this->assertDatabaseMissing('notifications', [
             'user_id' => $this->userId('user@example.test'),
-            'type' => 'review_pending',
+            'type' => 'review_queue',
         ]);
     }
 
@@ -53,7 +56,7 @@ class ReviewerNotificationTest extends ConformanceTestCase
             'kind' => 'document', 'id' => $id, 'decision' => 'revision', 'remarks' => 'redo the period',
         ])->assertCreated();
 
-        Notification::where('type', 'review_pending')->delete();
+        Notification::where('type', 'review_queue')->delete();
 
         $this->asUser()->postJson("/api/dashboard/documents/{$id}/resubmit", [
             'file' => UploadedFile::fake()->create('v2.pdf', 8, 'application/pdf'),
@@ -61,7 +64,7 @@ class ReviewerNotificationTest extends ConformanceTestCase
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $this->userId('osm.admin@example.test'),
-            'type' => 'review_pending',
+            'type' => 'review_queue',
         ]);
     }
 
@@ -73,7 +76,7 @@ class ReviewerNotificationTest extends ConformanceTestCase
 
         $this->assertDatabaseMissing('notifications', [
             'user_id' => $this->userId('osm.admin@example.test'),
-            'type' => 'review_pending',
+            'type' => 'review_queue',
         ]);
     }
 }

@@ -37,6 +37,7 @@ class GovernanceReviewReminder extends Command
             'user_id' => $uid,
             'message' => "Governance review overdue for: {$list}. Record it in System / Governance.",
             'type' => 'governance_reminder',
+            'link' => '/admin/governance',
             'is_read' => false,
             'created_at' => $now,
         ])->all());

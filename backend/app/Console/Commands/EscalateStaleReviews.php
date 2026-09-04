@@ -50,6 +50,7 @@ class EscalateStaleReviews extends Command
                 'user_id' => $uid,
                 'message' => "Document {$document->tracking_no} is {$over} day(s) past its suggested lead time and still awaiting a decision.",
                 'type' => 'review_pending',
+                'link' => '/osm-admin',
                 'is_read' => false,
                 'created_at' => $now,
             ], $recipients));

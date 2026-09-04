@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\DocumentStageEvent;
-use App\Models\Notification;
 use App\Models\Review;
 use App\Models\SubmissionRequest;
+use App\Support\Notifier;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -95,13 +95,13 @@ class ReviewController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        Notification::create([
-            'user_id' => $submitterId,
-            'message' => $this->notificationMessage($submittable->tracking_no, $data['decision'], $data['remarks'] ?? null),
-            'type' => 'review_decision',
-            'is_read' => false,
-            'created_at' => now(),
-        ]);
+        Notifier::send(
+            $submitterId,
+            'review_decision',
+            $this->notificationMessage($submittable->tracking_no, $data['decision'], $data['remarks'] ?? null),
+            '/dashboard',
+            config('app.name')." — {$submittable->tracking_no} {$data['decision']}",
+        );
 
         AuditLog::record(
             $request->user()->id,

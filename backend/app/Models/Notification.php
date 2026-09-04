@@ -9,7 +9,7 @@ class Notification extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['user_id', 'message', 'type', 'is_read', 'created_at'];
+    protected $fillable = ['user_id', 'message', 'type', 'link', 'is_read', 'created_at'];
 
     protected function casts(): array
     {

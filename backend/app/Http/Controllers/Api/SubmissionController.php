@@ -16,6 +16,7 @@ use App\Models\RequestType;
 use App\Models\SubmissionRequest;
 use App\Models\User;
 use App\Scanning\Contracts\FileScanner;
+use App\Support\Notifier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
@@ -189,13 +190,13 @@ class SubmissionController extends Controller
         );
 
         if ($assigneeId !== null && $assigneeId !== $actor->id) {
-            Notification::create([
-                'user_id' => $assigneeId,
-                'message' => ucfirst($kind)." {$submittable->tracking_no} was assigned to you for review.",
-                'type' => 'review_pending',
-                'is_read' => false,
-                'created_at' => now(),
-            ]);
+            Notifier::send(
+                $assigneeId,
+                'review_pending',
+                ucfirst($kind)." {$submittable->tracking_no} was assigned to you for review.",
+                '/osm-admin',
+                config('app.name')." — {$kind} {$submittable->tracking_no} assigned to you",
+            );
         }
 
         $submittable->load($kind === 'document' ? ['category', 'uploader', 'assignee', 'review'] : ['requestType', 'requester', 'assignee', 'review']);
@@ -546,13 +547,13 @@ class SubmissionController extends Controller
     {
         $noun = $isResubmission ? 'resubmission' : 'submission';
 
-        Notification::create([
-            'user_id' => $userId,
-            'message' => "Your {$noun} {$ref} was received and is pending review.",
-            'type' => 'submission_confirmation',
-            'is_read' => false,
-            'created_at' => now(),
-        ]);
+        Notifier::send(
+            $userId,
+            'submission_confirmation',
+            "Your {$noun} {$ref} was received and is pending review.",
+            '/dashboard',
+            config('app.name')." — {$noun} {$ref} received",
+        );
     }
 
     /**
@@ -567,18 +568,22 @@ class SubmissionController extends Controller
         $verb = $isResubmission ? 'resubmitted and is back in the queue' : 'is awaiting review';
         $now = now();
 
+        // Routed to one reviewer — a direct, actionable handoff, so this
+        // one also goes out by email (config/notifications.php).
         if ($assigneeId !== null && $assigneeId !== $submitterId) {
-            Notification::create([
-                'user_id' => $assigneeId,
-                'message' => ucfirst($kind)." {$ref} {$verb} (assigned to you).",
-                'type' => 'review_pending',
-                'is_read' => false,
-                'created_at' => $now,
-            ]);
+            Notifier::send(
+                $assigneeId,
+                'review_pending',
+                ucfirst($kind)." {$ref} {$verb} (assigned to you).",
+                '/osm-admin',
+                config('app.name')." — {$kind} {$ref} assigned to you",
+            );
 
             return;
         }
 
+        // Broadcast to the whole active OSM pool — in-app only (a single
+        // bulk insert; not emailed, to keep inboxes usable).
         $rows = User::query()
             ->where('role', User::ROLE_OSM_ADMIN)
             ->where('is_active', true)
@@ -588,7 +593,8 @@ class SubmissionController extends Controller
             ->map(fn (int $uid) => [
                 'user_id' => $uid,
                 'message' => ucfirst($kind)." {$ref} {$verb}.",
-                'type' => 'review_pending',
+                'type' => 'review_queue',
+                'link' => '/osm-admin',
                 'is_read' => false,
                 'created_at' => $now,
             ])
