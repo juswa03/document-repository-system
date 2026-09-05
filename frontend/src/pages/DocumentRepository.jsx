@@ -161,7 +161,7 @@ export default function DocumentRepository() {
       <section className="panel">
         <form className="filter-bar" onSubmit={runSmartSearch} style={{ marginBottom: '0.9rem' }}>
           <div className="filter-field filter-field--grow">
-            <label htmlFor="nl" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="nl">
               Ask in plain language
             </label>
             <input
@@ -195,7 +195,7 @@ export default function DocumentRepository() {
 
         <form className="filter-bar" onSubmit={handleSearchSubmit}>
           <div className="filter-field filter-field--grow">
-            <label htmlFor="q" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="q">
               Keyword
             </label>
             <input
@@ -208,10 +208,10 @@ export default function DocumentRepository() {
           </div>
 
           <div className="filter-field">
-            <label htmlFor="category" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="category">
               Category
             </label>
-            <select id="category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} style={{ color: 'var(--text-value)' }}>
+            <select id="category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
               <option value="">Any category</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.category_name}</option>
@@ -220,10 +220,10 @@ export default function DocumentRepository() {
           </div>
 
           <div className="filter-field">
-            <label htmlFor="office" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="office">
               Office
             </label>
-            <select id="office" value={officeId} onChange={(e) => setOfficeId(e.target.value)} style={{ color: 'var(--text-value)' }}>
+            <select id="office" value={officeId} onChange={(e) => setOfficeId(e.target.value)}>
               <option value="">Any office</option>
               {offices.map((o) => (
                 <option key={o.id} value={o.id}>{o.office_name}</option>
@@ -232,10 +232,10 @@ export default function DocumentRepository() {
           </div>
 
           <div className="filter-field">
-            <label htmlFor="objective" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="objective">
               Objective
             </label>
-            <select id="objective" value={objectiveId} onChange={(e) => setObjectiveId(e.target.value)} style={{ color: 'var(--text-value)' }}>
+            <select id="objective" value={objectiveId} onChange={(e) => setObjectiveId(e.target.value)}>
               <option value="">Any objective</option>
               {objectives.map((o) => (
                 <option key={o.id} value={o.id}>{o.code} — {o.title}</option>
@@ -244,10 +244,10 @@ export default function DocumentRepository() {
           </div>
 
           <div className="filter-field">
-            <label htmlFor="status" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="status">
               Status
             </label>
-            <select id="status" value={status} onChange={(e) => setStatus(e.target.value)} style={{ color: 'var(--text-value)' }}>
+            <select id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
               {STATUS_OPTIONS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
@@ -255,17 +255,17 @@ export default function DocumentRepository() {
           </div>
 
           <div className="filter-field">
-            <label htmlFor="dateFrom" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="dateFrom">
               From
             </label>
-            <input id="dateFrom" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ color: 'var(--text-value)' }} />
+            <input id="dateFrom" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
           </div>
 
           <div className="filter-field">
-            <label htmlFor="dateTo" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="dateTo">
               To
             </label>
-            <input id="dateTo" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ color: 'var(--text-value)' }} />
+            <input id="dateTo" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
 
           <div className="btn-row">
@@ -278,6 +278,7 @@ export default function DocumentRepository() {
           <p className="loading-text">Searching…</p>
         ) : (
           <>
+            <div className="table-scroll">
             <table className="data-table">
               <thead>
                 <tr>
@@ -331,7 +332,7 @@ export default function DocumentRepository() {
                     </tr>
                     {detailId === d.id && (
                       <tr>
-                        <td colSpan={8} style={{ background: 'var(--content-bg, #f8fafc)' }}>
+                        <td colSpan={8} style={{ background: 'var(--paper-sunken)' }}>
                           <div style={{ padding: '0.6rem 0.2rem', display: 'grid', gap: '0.5rem' }}>
                             <div>
                               <strong>AI summary:</strong>{' '}
@@ -353,6 +354,7 @@ export default function DocumentRepository() {
                 ))}
               </tbody>
             </table>
+            </div>
 
             <Pager meta={result.meta} page={page} onPage={setPage} />
           </>

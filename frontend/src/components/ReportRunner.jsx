@@ -115,7 +115,7 @@ export default function ReportRunner() {
 
   function renderFilter(key) {
     const val = filters[key] ?? '';
-    const common = { id: `f-${key}`, value: val, className: 'dash-select', style: { color: 'var(--text-value)' } };
+    const common = { id: `f-${key}`, value: val, className: 'dash-select' };
     switch (key) {
       case 'date_from':
       case 'date_to':
@@ -194,7 +194,7 @@ export default function ReportRunner() {
           <div className="filter-bar" style={{ flexWrap: 'wrap', gap: '0.75rem', margin: '1rem 0' }}>
             {(report.filters || []).map((key) => (
               <div className="filter-field" key={key}>
-                <label htmlFor={`f-${key}`} style={{ color: 'var(--text-label)' }}>
+                <label htmlFor={`f-${key}`}>
                   {key.replace(/_/g, ' ')}
                 </label>
                 {renderFilter(key)}
@@ -251,7 +251,7 @@ export default function ReportRunner() {
                 </div>
               )}
 
-              <div style={{ overflowX: 'auto' }}>
+              <div className="table-scroll">
                 <table className="data-table">
                   <thead>
                     <tr>

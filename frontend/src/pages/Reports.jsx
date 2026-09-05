@@ -85,12 +85,12 @@ export default function Reports() {
       <section className="panel">
         <form className="filter-bar" onSubmit={handleFilter}>
           <div className="filter-field">
-            <label htmlFor="dateFrom" style={{ color: 'var(--text-label)' }}>From</label>
-            <input id="dateFrom" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ color: 'var(--text-value)' }} />
+            <label htmlFor="dateFrom">From</label>
+            <input id="dateFrom" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
           </div>
           <div className="filter-field">
-            <label htmlFor="dateTo" style={{ color: 'var(--text-label)' }}>To</label>
-            <input id="dateTo" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ color: 'var(--text-value)' }} />
+            <label htmlFor="dateTo">To</label>
+            <input id="dateTo" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
           <button type="submit" className="btn btn--primary btn-sm">Apply</button>
         </form>
@@ -124,7 +124,7 @@ export default function Reports() {
                 </div>
               </div>
               {monthData.length === 0 ? (
-                <div className="chart-empty" style={{ color: 'var(--text-label)' }}>No data for this range.</div>
+                <div className="chart-empty">No data for this range.</div>
               ) : (
                 <ResponsiveContainer width="100%" height={240}>
                   <AreaChart data={monthData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>

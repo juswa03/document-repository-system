@@ -92,7 +92,8 @@ export default function AccessGrantsPanel({ documentId }) {
     <div>
       {error && <p className="error-banner">{error}</p>}
 
-      <table className="data-table" style={{ marginBottom: '0.8rem' }}>
+      <div className="table-scroll" style={{ marginBottom: '0.8rem' }}>
+      <table className="data-table">
         <thead>
           <tr>
             <th>Grantee</th>
@@ -142,10 +143,11 @@ export default function AccessGrantsPanel({ documentId }) {
           })}
         </tbody>
       </table>
+      </div>
 
       <form className="filter-bar" onSubmit={grant} style={{ alignItems: 'flex-end' }}>
         <div className="filter-field">
-          <label htmlFor="gt" style={{ color: 'var(--text-label)' }}>Grant to</label>
+          <label htmlFor="gt">Grant to</label>
           <select
             id="gt"
             value={granteeType}
@@ -160,7 +162,7 @@ export default function AccessGrantsPanel({ documentId }) {
         </div>
 
         <div className="filter-field filter-field--grow">
-          <label htmlFor="gid" style={{ color: 'var(--text-label)' }}>
+          <label htmlFor="gid">
             {granteeType === 'user' ? 'User' : 'Office'}
           </label>
           <select id="gid" value={granteeId} onChange={(e) => setGranteeId(e.target.value)} required>
@@ -174,7 +176,7 @@ export default function AccessGrantsPanel({ documentId }) {
         </div>
 
         <div className="filter-field filter-field--grow">
-          <label htmlFor="grsn" style={{ color: 'var(--text-label)' }}>Reason</label>
+          <label htmlFor="grsn">Reason</label>
           <input
             id="grsn"
             type="text"
@@ -186,7 +188,7 @@ export default function AccessGrantsPanel({ documentId }) {
         </div>
 
         <div className="filter-field">
-          <label htmlFor="gexp" style={{ color: 'var(--text-label)' }}>Expires (optional)</label>
+          <label htmlFor="gexp">Expires (optional)</label>
           <input id="gexp" type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
         </div>
 

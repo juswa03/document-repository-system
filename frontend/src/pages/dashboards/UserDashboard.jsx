@@ -494,6 +494,7 @@ export default function UserDashboard() {
         {loading ? (
           <p className="loading-text">Loading your submissions…</p>
         ) : (
+          <div className="table-scroll">
           <table className="data-table">
             <thead>
               <tr>
@@ -544,7 +545,7 @@ export default function UserDashboard() {
                       </tr>
                       {detailKey === rowKey && (
                         <tr>
-                          <td colSpan={5} style={{ background: 'var(--content-bg, #f8fafc)' }}>
+                          <td colSpan={5} style={{ background: 'var(--paper-sunken)' }}>
                             <SubmissionDetail s={s} />
                           </td>
                         </tr>
@@ -554,6 +555,7 @@ export default function UserDashboard() {
                 })}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 

@@ -257,7 +257,7 @@ export default function OsmAdminDashboard() {
             {categories.length > 0 && (
               <select
                 className="dash-select"
-                style={{ width: 'auto', color: 'var(--text-label)' }}
+                style={{ width: 'auto' }}
                 value={categoryFilter}
                 onChange={(e) => {
                   setQueuePage(1);
@@ -290,6 +290,7 @@ export default function OsmAdminDashboard() {
         {loading ? (
           <p className="loading-text">Loading the queue…</p>
         ) : (
+          <div className="table-scroll">
           <table className="data-table">
             <thead>
               <tr>
@@ -321,7 +322,7 @@ export default function OsmAdminDashboard() {
                         {item.overdue && (
                           <span
                             title={`Past the ${item.target_days}-working-day target (${item.days_in_stage} days in stage)`}
-                            style={{ color: 'var(--danger, #a1442f)', marginLeft: 6, fontSize: '.8em' }}
+                            style={{ color: 'var(--danger)', marginLeft: 6, fontSize: '.8em' }}
                           >
                             ⚠ overdue
                           </span>
@@ -494,7 +495,7 @@ export default function OsmAdminDashboard() {
                                   }
                                 />{' '}
                                 {c.label}
-                                {c.required ? <span style={{ color: 'var(--danger, #a1442f)' }}> *</span> : null}
+                                {c.required ? <span style={{ color: 'var(--danger)' }}> *</span> : null}
                               </label>
                             ))}
 
@@ -582,6 +583,7 @@ export default function OsmAdminDashboard() {
               })}
             </tbody>
           </table>
+          </div>
         )}
 
         <Pager meta={queueMeta} page={queuePage} onPage={setQueuePage} />
@@ -595,6 +597,7 @@ export default function OsmAdminDashboard() {
           </div>
         </div>
 
+        <div className="table-scroll">
         <table className="data-table">
           <thead>
             <tr>
@@ -620,6 +623,7 @@ export default function OsmAdminDashboard() {
             ))}
           </tbody>
         </table>
+        </div>
       </section>
     </DashboardShell>
   );

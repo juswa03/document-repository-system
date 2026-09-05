@@ -70,7 +70,7 @@
   position: absolute;
   top: calc(100% + 0.6rem);
   right: 0;
-  width: 340px;
+  width: min(340px, calc(100vw - 2rem));
   background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);

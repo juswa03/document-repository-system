@@ -29,9 +29,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 0.75rem;
   padding: 1.5rem 2.5rem;
   background: var(--header-bg);
   border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    padding: 1.1rem 1.25rem;
+  }
+
+  .page-body {
+    padding: 1.25rem;
+  }
 }
 
 .page-eyebrow {
@@ -70,6 +82,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -121,6 +134,19 @@
 }
 
 /* ---------- Tables ---------- */
+
+/* Wrap any <table class="data-table"> that can outgrow a narrow viewport:
+   <div class="table-scroll"><table class="data-table">...</table></div>
+   Scrolls horizontally inside the panel instead of squeezing columns or
+   breaking the page layout. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll .data-table {
+  min-width: 640px;
+}
 
 .data-table {
   width: 100%;
@@ -273,8 +299,8 @@
 
 .btn-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-
 }
 /* ---------- Forms ---------- */
 
@@ -553,6 +579,7 @@
 
 .tab-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1.25rem;
 }

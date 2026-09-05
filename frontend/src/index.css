@@ -7,6 +7,12 @@
 html, body {
   margin: 0;
   padding: 0;
+  /* Safety net: intentionally-scrollable regions (the mobile sidebar nav,
+     .table-scroll) manage their own overflow-x. Nothing on the page should
+     ever need the page itself to scroll sideways — if a component forgets
+     to wrap/contain its content, this clips it instead of letting the
+     whole page shift and break on narrow screens. */
+  overflow-x: hidden;
 }
 
 body {
