@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import api from '../lib/api';
+import { disconnectEcho } from '../lib/echo';
 
 const AuthContext = createContext(null);
 
@@ -43,6 +44,7 @@ export function AuthProvider({ children }) {
       // token may already be invalid — clear local state regardless
     }
     localStorage.removeItem('auth_token');
+    disconnectEcho();
     setUser(null);
     setStatus('unauthenticated');
   }, []);

@@ -12,6 +12,8 @@ import {
   X,
 } from 'lucide-react';
 import api from '../lib/api';
+import { getEcho } from '../lib/echo';
+import { useAuth } from '../context/AuthContext';
 import './NotificationBell.css';
 
 const POLL_MS = 45000;
@@ -94,6 +96,7 @@ function Toast({ toast, onOpen, onDismiss }) {
 
 export default function NotificationBell() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -151,6 +154,10 @@ export default function NotificationBell() {
 
   useEffect(() => {
     load();
+    // Reverb pushes new notifications instantly (below); this interval is
+    // just the safety net for a missed/dropped socket message, or for a
+    // deployment that hasn't got Reverb running yet (getEcho() → null,
+    // see below) — the bell degrades to pure polling in that case.
     const interval = setInterval(load, POLL_MS);
     const onVisible = () => {
       if (document.visibilityState === 'visible') load();
@@ -163,6 +170,50 @@ export default function NotificationBell() {
       window.removeEventListener('focus', load);
     };
   }, [load]);
+
+  // A notification pushed over the wire, in the same shape as a fresh row
+  // from the index endpoint — shared with the toast/badge logic below.
+  const handlePush = useCallback((payload) => {
+    if (seenIds.current?.has(payload.id)) return; // a poll already caught it
+    seenIds.current?.add(payload.id);
+
+    const notif = {
+      id: payload.id,
+      message: payload.message,
+      type: payload.type,
+      link: payload.link,
+      is_read: false,
+      created_at: payload.created_at || new Date().toISOString(),
+    };
+
+    setItems((prev) => [notif, ...prev.filter((n) => n.id !== notif.id)]);
+    setToasts((prev) => [
+      { key: `${notif.id}-${Date.now()}`, id: notif.id, message: notif.message, link: notif.link, type: notif.type },
+      ...prev,
+    ].slice(0, 3));
+    setBump(true);
+    setTimeout(() => setBump(false), 600);
+    prevUnread.current += 1;
+  }, []);
+
+  // Live push (Phase 35): subscribe to this user's own private channel.
+  // getEcho() returns null when no Reverb key is configured — the bell
+  // then simply relies on the polling above, no error, no retry storm.
+  useEffect(() => {
+    if (!user?.id) return undefined;
+
+    const echoInstance = getEcho();
+    if (!echoInstance) return undefined;
+
+    const channelName = `App.Models.User.${user.id}`;
+    const channel = echoInstance.private(channelName);
+    channel.listen('.notification.created', handlePush);
+
+    return () => {
+      channel.stopListening('.notification.created');
+      echoInstance.leave(channelName);
+    };
+  }, [user?.id, handlePush]);
 
   // Re-render every 30s so relative timestamps stay current.
   useEffect(() => {

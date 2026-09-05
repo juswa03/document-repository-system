@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Events\NotificationCreated;
 use App\Models\Notification;
 use App\Models\User;
 use App\Notifications\UserAlert;
@@ -26,7 +27,7 @@ class Notifier
     ): void {
         $userId = $user instanceof User ? $user->id : (int) $user;
 
-        Notification::create([
+        $row = Notification::create([
             'user_id' => $userId,
             'message' => $message,
             'type' => $type,
@@ -34,6 +35,11 @@ class Notifier
             'is_read' => false,
             'created_at' => now(),
         ]);
+
+        // Live push to the bell (Phase 35) — falls back silently to the
+        // next poll wherever Reverb isn't running (BROADCAST_CONNECTION
+        // defaults to "log" outside a configured environment).
+        event(new NotificationCreated($row));
 
         if (! self::emailable($type)) {
             return;
@@ -67,6 +73,32 @@ class Notifier
     ): void {
         foreach ($users as $user) {
             self::send($user, $type, $message, $link, $emailSubject);
+        }
+    }
+
+    /**
+     * Write the row and push it live, but NEVER email — for automated
+     * fan-outs (cron escalations) where a daily nudge to a whole pool
+     * should not also mean a daily inbox blast, regardless of what
+     * config/notifications.php says about this $type elsewhere.
+     *
+     * @param  iterable<User|int>  $users
+     */
+    public static function inAppOnlyMany(iterable $users, string $type, string $message, ?string $link = null): void
+    {
+        foreach ($users as $user) {
+            $userId = $user instanceof User ? $user->id : (int) $user;
+
+            $row = Notification::create([
+                'user_id' => $userId,
+                'message' => $message,
+                'type' => $type,
+                'link' => $link,
+                'is_read' => false,
+                'created_at' => now(),
+            ]);
+
+            event(new NotificationCreated($row));
         }
     }
 

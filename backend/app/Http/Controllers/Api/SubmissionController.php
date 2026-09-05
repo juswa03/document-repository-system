@@ -10,7 +10,6 @@ use App\Models\AuditLog;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\DocumentStageEvent;
-use App\Models\Notification;
 use App\Models\Office;
 use App\Models\RequestType;
 use App\Models\SubmissionRequest;
@@ -566,7 +565,6 @@ class SubmissionController extends Controller
     private function notifyReviewers(int $submitterId, string $ref, string $kind, bool $isResubmission = false, ?int $assigneeId = null): void
     {
         $verb = $isResubmission ? 'resubmitted and is back in the queue' : 'is awaiting review';
-        $now = now();
 
         // Routed to one reviewer — a direct, actionable handoff, so this
         // one also goes out by email (config/notifications.php).
@@ -582,27 +580,17 @@ class SubmissionController extends Controller
             return;
         }
 
-        // Broadcast to the whole active OSM pool — in-app only (a single
-        // bulk insert; not emailed, to keep inboxes usable).
-        $rows = User::query()
+        // Broadcast to the whole active OSM pool — in-app + live push, but
+        // never emailed (review_queue is not in config/notifications.php
+        // email_types), so a busy queue doesn't spam every admin's inbox.
+        $pool = User::query()
             ->where('role', User::ROLE_OSM_ADMIN)
             ->where('is_active', true)
             ->where('id', '!=', $submitterId)
             ->when($assigneeId !== null, fn ($q) => $q->where('id', '!=', $assigneeId))
-            ->pluck('id')
-            ->map(fn (int $uid) => [
-                'user_id' => $uid,
-                'message' => ucfirst($kind)." {$ref} {$verb}.",
-                'type' => 'review_queue',
-                'link' => '/osm-admin',
-                'is_read' => false,
-                'created_at' => $now,
-            ])
-            ->all();
+            ->pluck('id');
 
-        if ($rows !== []) {
-            Notification::insert($rows);
-        }
+        Notifier::sendMany($pool, 'review_queue', ucfirst($kind)." {$ref} {$verb}.", '/osm-admin');
     }
 
     /**

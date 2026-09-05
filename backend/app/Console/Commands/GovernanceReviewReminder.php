@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\GovernanceReview;
-use App\Models\Notification;
 use App\Models\User;
+use App\Support\Notifier;
 use Illuminate\Console\Command;
 
 /**
@@ -30,17 +30,14 @@ class GovernanceReviewReminder extends Command
         }
 
         $admins = User::where('role', User::ROLE_SYSTEM_ADMIN)->where('is_active', true)->pluck('id');
-        $now = now();
         $list = $overdue->pluck('scope')->implode(', ');
 
-        Notification::insert($admins->map(fn (int $uid) => [
-            'user_id' => $uid,
-            'message' => "Governance review overdue for: {$list}. Record it in System / Governance.",
-            'type' => 'governance_reminder',
-            'link' => '/admin/governance',
-            'is_read' => false,
-            'created_at' => $now,
-        ])->all());
+        Notifier::sendMany(
+            $admins,
+            'governance_reminder',
+            "Governance review overdue for: {$list}. Record it in System / Governance.",
+            '/admin/governance',
+        );
 
         $this->info('Reminder sent.');
 

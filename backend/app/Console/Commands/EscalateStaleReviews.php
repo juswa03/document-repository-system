@@ -5,8 +5,8 @@ namespace App\Console\Commands;
 use App\LeadTime\Target;
 use App\Models\AuditLog;
 use App\Models\Document;
-use App\Models\Notification;
 use App\Models\User;
+use App\Support\Notifier;
 use Illuminate\Console\Command;
 
 /**
@@ -40,20 +40,20 @@ class EscalateStaleReviews extends Command
         }
 
         $pool = User::where('role', User::ROLE_OSM_ADMIN)->where('is_active', true)->pluck('id');
-        $now = now();
 
         foreach ($stale as $document) {
             $recipients = $document->assigned_to ? [$document->assigned_to] : $pool->all();
             $over = Target::daysOverdue($document);
 
-            Notification::insert(array_map(fn (int $uid) => [
-                'user_id' => $uid,
-                'message' => "Document {$document->tracking_no} is {$over} day(s) past its suggested lead time and still awaiting a decision.",
-                'type' => 'review_pending',
-                'link' => '/osm-admin',
-                'is_read' => false,
-                'created_at' => $now,
-            ], $recipients));
+            // In-app + live push only — never emailed, even though
+            // "review_pending" is an emailable type elsewhere, so a daily
+            // escalation sweep can't turn into a daily inbox blast.
+            Notifier::inAppOnlyMany(
+                $recipients,
+                'review_pending',
+                "Document {$document->tracking_no} is {$over} day(s) past its suggested lead time and still awaiting a decision.",
+                '/osm-admin',
+            );
 
             AuditLog::record(
                 null,
