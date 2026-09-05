@@ -7,6 +7,7 @@ use App\AI\DocumentContext;
 use App\AI\OpenAiCompatibleProvider;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 
 /**
  * §F — the AI layer works with a free OpenAI-compatible provider (Groq /
@@ -124,6 +125,45 @@ class OpenAiCompatibleProviderTest extends ConformanceTestCase
         Http::fake(['*/chat/completions' => Http::response('rate limited', 429)]);
 
         $this->assertNull(app(AiProvider::class)->classify($this->context(), ['Governance']));
+
+        // A real (non-connection) API response is never retried — only a
+        // failure to connect at all is.
+        Http::assertSentCount(1);
+    }
+
+    public function test_a_transient_connection_failure_is_retried_and_recovers(): void
+    {
+        $this->useGroq();
+        Sleep::fake();
+        Http::fake([
+            '*/chat/completions' => Http::sequence()
+                ->pushFailedConnection('cURL error 35: OpenSSL SSL_connect: SSL_ERROR_SYSCALL')
+                ->push([
+                    'choices' => [['message' => ['content' => 'OK']]],
+                ]),
+        ]);
+
+        $message = app(AiProvider::class)->healthCheck();
+
+        $this->assertStringContainsString('OK', $message);
+        Http::assertSentCount(2);
+    }
+
+    public function test_a_persistent_connection_failure_still_yields_no_suggestion(): void
+    {
+        $this->useGroq();
+        Sleep::fake();
+        Http::fake([
+            '*/chat/completions' => Http::sequence()
+                ->pushFailedConnection()
+                ->pushFailedConnection()
+                ->pushFailedConnection(),
+        ]);
+
+        $this->assertNull(app(AiProvider::class)->classify($this->context(), ['Governance']));
+
+        // Initial attempt + 2 retries, then it gives up cleanly.
+        Http::assertSentCount(3);
     }
 
     public function test_a_non_tool_reply_yields_no_suggestion(): void

@@ -5,6 +5,7 @@ namespace App\AI;
 use App\AI\Concerns\BuildsSuggestions;
 use App\AI\Contracts\AiProvider;
 use App\AI\Exceptions\AiNotConfiguredException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -107,11 +108,23 @@ class OpenAiCompatibleProvider implements AiProvider
         ];
     }
 
+    /**
+     * A one-off TLS/connection blip talking to the provider (seen in
+     * practice: "cURL error 35 ... SSL_ERROR_SYSCALL") used to silently
+     * lose the whole analysis, with no automatic recovery — the request
+     * never even reached the provider, so a key/quota problem was never
+     * in play. Up to 2 retries (3 attempts total) clear a transient
+     * failure without risking a retry storm against a genuinely-down
+     * endpoint. This never retries an actual API response (401, 400,
+     * ...) — only a failure to connect at all. `retry()`'s first
+     * argument is the TOTAL number of attempts, not extra retries.
+     */
     private function client(): PendingRequest
     {
         return Http::baseUrl(rtrim((string) $this->settings->baseUrl, '/'))
             ->withToken((string) $this->settings->apiKey)
             ->acceptJson()
-            ->timeout(30);
+            ->timeout(30)
+            ->retry(3, fn (int $attempt) => $attempt * 500, fn (Throwable $e) => $e instanceof ConnectionException);
     }
 }
