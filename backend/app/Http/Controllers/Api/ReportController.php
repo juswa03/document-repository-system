@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\AI\Contracts\AiProvider;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Document;
+use App\Models\DocumentAiSuggestion;
+use App\Models\SystemSetting;
 use App\Reports\Registry;
 use App\Reports\Report;
 use Illuminate\Http\Request;
@@ -13,6 +16,20 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
+    /**
+     * Reports worth an AI narrative — aggregate/scored reports where a
+     * sentence of context adds something over the table. The raw-list
+     * reports (inventory, retrieval log, audit trail, ...) have nothing
+     * for a narrative to say that the rows don't already say directly.
+     *
+     * @var list<string>
+     */
+    private const NARRATABLE_REPORTS = [
+        'compliance-evidence',
+        'office-submission-compliance',
+        'document-aging',
+    ];
+
     public function __construct(private readonly Registry $registry) {}
 
     /**
@@ -86,6 +103,78 @@ class ReportController extends Controller
             'total_rows' => $total,
             'truncated' => $total > $cap,
             'row_cap' => $cap,
+        ]);
+    }
+
+    /**
+     * POST /api/reports/{report}/narrative
+     * A short AI-drafted paragraph over a report's own already-computed
+     * figures (§F "report generation assistant"). The figures are never
+     * recomputed by the model and nothing here is applied to any
+     * record, so there is no accept/dismiss step (BR-03 has nothing to
+     * gate) — the draft is shown immediately, clearly as a draft.
+     */
+    public function narrative(Request $request, string $report, AiProvider $provider): mixed
+    {
+        if (! in_array($report, self::NARRATABLE_REPORTS, true)) {
+            return response()->json([
+                'message' => 'This report does not offer an AI narrative.',
+            ], 422);
+        }
+
+        $definition = $this->registry->find($report);
+        abort_if($definition === null, 404, "Unknown report '{$report}'.");
+
+        $settings = SystemSetting::current();
+
+        if (! $settings->aiCapabilityEnabled('report_narrative')) {
+            return response()->json(['message' => 'AI report narratives are turned off.'], 422);
+        }
+
+        if (! $provider->isConfigured()) {
+            return response()->json(['message' => 'The AI layer is not configured.'], 422);
+        }
+
+        if (DocumentAiSuggestion::spendThisMonth() >= (float) $settings->ai_monthly_cap_usd) {
+            return response()->json(['message' => 'This month\'s AI spend cap has been reached.'], 422);
+        }
+
+        $filters = $request->validate([
+            'category_id' => ['nullable', 'exists:categories,id'],
+            'office_id' => ['nullable', 'exists:offices,id'],
+        ]);
+        $filters = array_intersect_key($filters, array_flip($definition->acceptedFilters()));
+
+        $rows = $definition->rows($filters);
+
+        $suggestion = $provider->narrateReport($definition->label(), [
+            'summary' => $definition->summary($filters),
+            'columns' => $definition->columns(),
+            'sample_rows' => $rows->take(20)->values()->all(),
+        ]);
+
+        if ($suggestion === null) {
+            return response()->json(['message' => 'Could not draft a narrative right now.'], 422);
+        }
+
+        $row = DocumentAiSuggestion::fromReportNarrative($report, $suggestion);
+        $row->save();
+
+        AuditLog::record(
+            $request->user()->id,
+            'ai_report_narrative_generated',
+            "Generated an AI narrative for the '{$definition->label()}' report.",
+            DocumentAiSuggestion::class,
+            $row->id,
+            ['report' => $report, 'cost_usd' => $row->cost_usd],
+        );
+
+        return response()->json([
+            'narrative' => $suggestion->data['narrative'],
+            'key_points' => $suggestion->data['key_points'],
+            'confidence' => $suggestion->confidence,
+            'model' => $suggestion->model,
+            'generated_at' => $row->created_at,
         ]);
     }
 

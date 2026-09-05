@@ -21,6 +21,8 @@ final class Suggestion
 
     public const KIND_NEAR_DUPLICATE = 'near_duplicate';
 
+    public const KIND_REPORT_NARRATIVE = 'report_narrative';
+
     public function __construct(
         public readonly string $kind,
         /** @var array<string, mixed> kind-specific payload */

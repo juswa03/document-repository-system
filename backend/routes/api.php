@@ -124,6 +124,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('/', [ReportController::class, 'index']);
         Route::get('/documents', [ReportController::class, 'documents']);   // legacy dashboard aggregate
         Route::get('/{report}', [ReportController::class, 'show']);
+        Route::post('/{report}/narrative', [ReportController::class, 'narrative']);
     });
 
     // OSM admin — review queue + decisions + access grants.

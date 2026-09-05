@@ -29,7 +29,14 @@ class FakeAiProvider implements AiProvider
     /** @var array<string, mixed>|null */
     public ?array $searchFilters = null;
 
+    public ?Suggestion $reportNarrative = null;
+
     public int $classifyCalls = 0;
+
+    public int $narrateReportCalls = 0;
+
+    /** @var array<string, mixed>|null the payload the last narrateReport() call received */
+    public ?array $lastNarrativePayload = null;
 
     public function isConfigured(): bool
     {
@@ -76,5 +83,13 @@ class FakeAiProvider implements AiProvider
     public function interpretSearch(string $query, array $categories, array $offices): ?array
     {
         return $this->searchFilters;
+    }
+
+    public function narrateReport(string $reportLabel, array $payload): ?Suggestion
+    {
+        $this->narrateReportCalls++;
+        $this->lastNarrativePayload = $payload;
+
+        return $this->reportNarrative;
     }
 }

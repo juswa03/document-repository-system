@@ -52,6 +52,7 @@ return [
         'summary' => 'Document summary',
         'near_duplicate' => 'Near-duplicate detection (no provider cost)',
         'search' => 'Natural-language search parsing',
+        'report_narrative' => 'Report narrative summary',
     ],
 
     'providers' => [

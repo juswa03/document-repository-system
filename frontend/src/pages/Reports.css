@@ -113,6 +113,54 @@
   font-size: 0.8rem;
 }
 
+/* AI report narrative — a clearly-labelled draft, never styled to look
+   like the report's own (authoritative) figures. */
+
+.ai-narrative-card {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-sm);
+}
+
+.ai-narrative-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.ai-narrative-text {
+  margin: 0 0 0.5rem;
+  color: var(--text-value);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ai-narrative-points {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+  color: var(--text-value);
+  font-size: 0.87rem;
+}
+
+.ai-narrative-points li {
+  margin: 0.2rem 0;
+}
+
+.ai-narrative-meta {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
 /* Axis / tick typography to match the rest of the app */
 
 .recharts-cartesian-axis-tick text,

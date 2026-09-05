@@ -112,6 +112,77 @@ trait BuildsSuggestions
         );
     }
 
+    public function narrateReport(string $reportLabel, array $payload): ?Suggestion
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        $summary = $payload['summary'] ?? [];
+        $columns = $payload['columns'] ?? [];
+        $sampleRows = $payload['sample_rows'] ?? [];
+
+        $summaryLines = collect($summary)
+            ->map(fn ($v, $k) => "- {$k}: ".(is_bool($v) ? ($v ? 'yes' : 'no') : ($v ?? 'n/a')))
+            ->implode("\n");
+
+        $columnLabels = implode(', ', array_column($columns, 'label'));
+
+        $rowLines = collect($sampleRows)
+            ->take(20)
+            ->map(fn (array $row) => '- '.implode(' | ', array_map(
+                fn ($v) => is_bool($v) ? ($v ? 'yes' : 'no') : ($v ?? '—'),
+                $row,
+            )))
+            ->implode("\n");
+
+        $result = $this->structuredCall(
+            system: 'You are a records officer drafting the cover note for a report going to an '
+                ."executive. You are given the report's already-computed headline figures and a "
+                .'sample of its rows — never recompute or contradict them, never invent a number '
+                .'that is not present. Write a neutral 2-4 sentence narrative that says what the '
+                .'figures show and, only if the data makes it obvious, what stands out (a gap, an '
+                .'office falling behind, an item most overdue). List 2-4 short, concrete '
+                .'observations as key points. If the figures show nothing notable, say so plainly '
+                .'rather than manufacturing significance.',
+            user: "Report: {$reportLabel}\n\nHeadline figures:\n{$summaryLines}"
+                ."\n\nColumns: {$columnLabels}\n\nSample rows (".count($sampleRows).' shown):'
+                ."\n{$rowLines}",
+            tool: [
+                'name' => 'record_report_narrative',
+                'description' => 'Record the report narrative.',
+                'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'narrative' => ['type' => 'string'],
+                        'key_points' => ['type' => 'array', 'items' => ['type' => 'string']],
+                        'confidence' => ['type' => 'number', 'minimum' => 0, 'maximum' => 1],
+                    ],
+                    'required' => ['narrative', 'confidence'],
+                ],
+            ],
+        );
+
+        if ($result === null || trim((string) ($result[0]['narrative'] ?? '')) === '') {
+            return null;
+        }
+
+        [$input, $usage] = $result;
+
+        return new Suggestion(
+            kind: Suggestion::KIND_REPORT_NARRATIVE,
+            data: [
+                'narrative' => trim($input['narrative']),
+                'key_points' => array_values(array_filter((array) ($input['key_points'] ?? []), 'is_string')),
+            ],
+            confidence: (float) ($input['confidence'] ?? 0),
+            rationale: 'Drafted from the report\'s own headline figures — nothing recomputed.',
+            model: $this->settings->model,
+            inputTokens: $usage[0],
+            outputTokens: $usage[1],
+        );
+    }
+
     public function classify(DocumentContext $document, array $categories): ?Suggestion
     {
         if (! $this->isConfigured() || $categories === []) {

@@ -58,4 +58,9 @@ class NullProvider implements AiProvider
     {
         return null;
     }
+
+    public function narrateReport(string $reportLabel, array $payload): ?Suggestion
+    {
+        return null;
+    }
 }

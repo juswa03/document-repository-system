@@ -89,4 +89,16 @@ interface AiProvider
      * @return array<string, mixed>|null
      */
     public function interpretSearch(string $query, array $categories, array $offices): ?array;
+
+    /**
+     * Draft a short prose narrative over a report's already-computed
+     * aggregate figures — the "report generation assistant" role (§F).
+     * Nothing here recomputes or is treated as authoritative: the
+     * numbers it is given ARE the report; this only puts a sentence or
+     * two of human-readable context next to them. Returns null when the
+     * layer is off or the model gives nothing usable.
+     *
+     * @param  array<string, mixed>  $payload  {summary, columns, sample_rows}
+     */
+    public function narrateReport(string $reportLabel, array $payload): ?Suggestion;
 }

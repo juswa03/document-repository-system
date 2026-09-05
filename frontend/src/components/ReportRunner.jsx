@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import api from '../lib/api';
 import { downloadReportCsv } from '../lib/download';
 
 const STATUS_OPTIONS = ['pending', 'approved', 'rejected', 'revision'];
 const KIND_OPTIONS = ['all', 'document', 'request'];
+
+// Keep in sync with ReportController::NARRATABLE_REPORTS — the aggregate
+// / scored reports where an AI sentence of context adds something over
+// the table. The raw-list reports have nothing extra for it to say.
+const NARRATABLE_REPORTS = ['compliance-evidence', 'office-submission-compliance', 'document-aging'];
 
 /**
  * Phase 6.2 — the report picker (PF-16 surface). Lists GET /api/reports,
@@ -20,6 +26,9 @@ export default function ReportRunner() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+  const [narrative, setNarrative] = useState(null);
+  const [narrativeLoading, setNarrativeLoading] = useState(false);
+  const [narrativeError, setNarrativeError] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -45,12 +54,16 @@ export default function ReportRunner() {
     setFilters({});
     setResult(null);
     setError('');
+    setNarrative(null);
+    setNarrativeError('');
   }, [selectedKey]);
 
   async function run() {
     if (!report) return;
     setLoading(true);
     setError('');
+    setNarrative(null);
+    setNarrativeError('');
     try {
       const params = Object.fromEntries(
         Object.entries(filters).filter(([, v]) => v !== '' && v != null)
@@ -61,6 +74,23 @@ export default function ReportRunner() {
       setError(err?.response?.data?.message || 'Could not run that report.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function generateNarrative() {
+    if (!report) return;
+    setNarrativeLoading(true);
+    setNarrativeError('');
+    try {
+      const params = Object.fromEntries(
+        Object.entries(filters).filter(([, v]) => v !== '' && v != null)
+      );
+      const { data } = await api.post(`/reports/${report.key}/narrative`, params);
+      setNarrative(data);
+    } catch (err) {
+      setNarrativeError(err?.response?.data?.message || 'Could not draft a narrative right now.');
+    } finally {
+      setNarrativeLoading(false);
     }
   }
 
@@ -176,6 +206,16 @@ export default function ReportRunner() {
             <button className="btn btn--outline btn-sm" onClick={exportCsv} disabled={exporting || !result}>
               {exporting ? 'Exporting…' : 'Download CSV'}
             </button>
+            {report && NARRATABLE_REPORTS.includes(report.key) && result && (
+              <button
+                className="btn btn--outline btn-sm"
+                onClick={generateNarrative}
+                disabled={narrativeLoading}
+              >
+                <Sparkles size={14} style={{ marginRight: '0.35rem' }} />
+                {narrativeLoading ? 'Drafting…' : narrative ? 'Regenerate AI summary' : 'Generate AI summary'}
+              </button>
+            )}
           </div>
 
           {result && (
@@ -188,6 +228,26 @@ export default function ReportRunner() {
                       <div className="stat-label">{k.replace(/_/g, ' ')}</div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {narrativeError && <p className="error-banner">{narrativeError}</p>}
+
+              {narrative && (
+                <div className="ai-narrative-card">
+                  <div className="ai-narrative-head">
+                    <Sparkles size={14} />
+                    <span>AI-drafted summary — verify against the table below</span>
+                  </div>
+                  <p className="ai-narrative-text">{narrative.narrative}</p>
+                  {narrative.key_points?.length > 0 && (
+                    <ul className="ai-narrative-points">
+                      {narrative.key_points.map((point, i) => <li key={i}>{point}</li>)}
+                    </ul>
+                  )}
+                  <p className="ai-narrative-meta">
+                    {Math.round(narrative.confidence * 100)}% confidence · {narrative.model}
+                  </p>
                 </div>
               )}
 
