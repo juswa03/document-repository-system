@@ -4,6 +4,8 @@ import Pager from '../../components/Pager';
 import api from '../../lib/api';
 import { downloadAuditLogCsv } from '../../lib/download';
 import './dashboards.css';
+import Banner from '../../components/Banner';
+import { TableSkeleton } from '../../components/Skeleton';
 
 const EMPTY = { action: '', actor_id: '', date_from: '', date_to: '' };
 
@@ -18,9 +20,9 @@ function EntryDetail({ subject, properties }) {
   const isDiff = before && after && typeof before === 'object' && typeof after === 'object';
 
   return (
-    <div style={{ padding: '0.5rem 0' }}>
+    <div className="entry-detail">
       {subject && (
-        <p className="cell-muted" style={{ marginBottom: '0.4rem' }}>
+        <p className="cell-muted u-mb-1">
           Subject: {subject}
         </p>
       )}
@@ -28,7 +30,7 @@ function EntryDetail({ subject, properties }) {
       {!hasProps && <span className="cell-muted">No additional detail recorded.</span>}
 
       {hasProps && isDiff && (
-        <table className="data-table" style={{ margin: 0 }}>
+        <table className="data-table data-table--flush">
           <thead>
             <tr>
               <th>Field</th>
@@ -49,7 +51,7 @@ function EntryDetail({ subject, properties }) {
       )}
 
       {hasProps && !isDiff && (
-        <table className="data-table" style={{ margin: 0 }}>
+        <table className="data-table data-table--flush">
           <tbody>
             {Object.entries(properties).map(([k, v]) => (
               <tr key={k}>
@@ -118,8 +120,8 @@ export default function AuditLog() {
     setExporting(true);
     try {
       await downloadAuditLogCsv(params);
-    } catch {
-      setError('Could not export the audit log.');
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Could not export the audit log.');
     } finally {
       setExporting(false);
     }
@@ -129,7 +131,7 @@ export default function AuditLog() {
 
   return (
     <DashboardShell eyebrow="System / super admin" title="Audit log">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <section className="panel">
         <div className="panel-header">
@@ -148,7 +150,7 @@ export default function AuditLog() {
 
         <form className="filter-bar" onSubmit={(e) => e.preventDefault()}>
           <div className="filter-field">
-            <label htmlFor="f-action" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="f-action">
               Action
             </label>
             <select id="f-action" value={filters.action} onChange={(e) => set('action', e.target.value)}>
@@ -162,7 +164,7 @@ export default function AuditLog() {
           </div>
 
           <div className="filter-field">
-            <label htmlFor="f-actor" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="f-actor">
               Actor
             </label>
             <select id="f-actor" value={filters.actor_id} onChange={(e) => set('actor_id', e.target.value)}>
@@ -176,14 +178,14 @@ export default function AuditLog() {
           </div>
 
           <div className="filter-field">
-            <label htmlFor="f-from" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="f-from">
               From
             </label>
             <input id="f-from" type="date" value={filters.date_from} onChange={(e) => set('date_from', e.target.value)} />
           </div>
 
           <div className="filter-field">
-            <label htmlFor="f-to" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="f-to">
               To
             </label>
             <input id="f-to" type="date" value={filters.date_to} onChange={(e) => set('date_to', e.target.value)} />
@@ -206,10 +208,10 @@ export default function AuditLog() {
         </form>
 
         {loading ? (
-          <p className="loading-text">Loading…</p>
+          <TableSkeleton rows={6} label="Loading the audit log" />
         ) : (
           <>
-            <div style={{ overflowX: 'auto' }}>
+            <div className="u-scroll-x">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -234,8 +236,8 @@ export default function AuditLog() {
                     return (
                       <Fragment key={entry.id}>
                         <tr
+                          className={expandable ? 'row-expandable' : undefined}
                           onClick={() => expandable && setOpenId(open ? null : entry.id)}
-                          style={{ cursor: expandable ? 'pointer' : 'default' }}
                         >
                           <td className="cell-muted">{new Date(entry.created_at).toLocaleString()}</td>
                           <td>{entry.actor}</td>
@@ -243,7 +245,7 @@ export default function AuditLog() {
                           <td>
                             {entry.description}
                             {expandable && (
-                              <span className="cell-muted" style={{ marginLeft: '0.4rem' }}>
+                              <span className="cell-muted disclosure-caret">
                                 {open ? '▾' : '▸'}
                               </span>
                             )}
@@ -251,8 +253,8 @@ export default function AuditLog() {
                           <td className="cell-muted cell-mono">{entry.ip_address || '—'}</td>
                         </tr>
                         {open && (
-                          <tr>
-                            <td colSpan={5} style={{ background: 'var(--content-bg, #f8fafc)' }}>
+                          <tr className="detail-row">
+                            <td colSpan={5}>
                               <EntryDetail subject={entry.subject} properties={entry.properties} />
                             </td>
                           </tr>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import Banner from './Banner';
 
 /**
  * Manage access grants on a restricted / confidential document (FR-06 /
@@ -22,7 +23,7 @@ export default function AccessGrantsPanel({ documentId }) {
   async function load() {
     setError('');
     try {
-      const { data } = await api.get(`/osm-admin/documents/${documentId}/access-grants`);
+      const { data } = await api.get(`/office-admin/documents/${documentId}/access-grants`);
       setGrants(data);
     } catch (e) {
       setError(e?.response?.data?.message || 'Could not load the access grants.');
@@ -31,7 +32,7 @@ export default function AccessGrantsPanel({ documentId }) {
 
   useEffect(() => {
     load();
-    api.get('/osm-admin/users').then(({ data }) => setUsers(data)).catch(() => {});
+    api.get('/office-admin/users').then(({ data }) => setUsers(data)).catch(() => {});
     api.get('/offices').then(({ data }) => setOffices(data)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
@@ -47,7 +48,7 @@ export default function AccessGrantsPanel({ documentId }) {
     setBusy(true);
     setError('');
     try {
-      await api.post(`/osm-admin/documents/${documentId}/access-grants`, {
+      await api.post(`/office-admin/documents/${documentId}/access-grants`, {
         grantee_user_id: granteeType === 'user' ? Number(granteeId) : undefined,
         grantee_office_id: granteeType === 'office' ? Number(granteeId) : undefined,
         reason: reason.trim(),
@@ -70,7 +71,7 @@ export default function AccessGrantsPanel({ documentId }) {
     setBusy(true);
     setError('');
     try {
-      await api.delete(`/osm-admin/access-grants/${id}`);
+      await api.delete(`/office-admin/access-grants/${id}`);
       await load();
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not revoke that grant.');
@@ -85,14 +86,14 @@ export default function AccessGrantsPanel({ documentId }) {
     return 'active';
   };
 
-  if (error && grants === null) return <p className="error-banner">{error}</p>;
+  if (error && grants === null) return <Banner tone="error">{error}</Banner>;
   if (grants === null) return <p className="loading-text">Loading access grants…</p>;
 
   return (
     <div>
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
-      <div className="table-scroll" style={{ marginBottom: '0.8rem' }}>
+      <div className="table-scroll u-mb-3">
       <table className="data-table">
         <thead>
           <tr>
@@ -145,7 +146,7 @@ export default function AccessGrantsPanel({ documentId }) {
       </table>
       </div>
 
-      <form className="filter-bar" onSubmit={grant} style={{ alignItems: 'flex-end' }}>
+      <form className="filter-bar" onSubmit={grant}>
         <div className="filter-field">
           <label htmlFor="gt">Grant to</label>
           <select

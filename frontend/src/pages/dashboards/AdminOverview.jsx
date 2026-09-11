@@ -14,6 +14,7 @@ import {
   Archive,
   BarChart3,
 } from 'lucide-react';
+import Banner from '../../components/Banner';
 import DashboardShell from './DashboardShell';
 import api from '../../lib/api';
 import { CHART_COLORS, ChartTooltip } from '../../lib/chartTheme';
@@ -23,7 +24,7 @@ import './AdminOverview.css';
 
 const ROLE_META = {
   system_admin: { label: 'System admin', color: CHART_COLORS.seal },
-  osm_admin: { label: 'OSM admin', color: CHART_COLORS.ledger },
+  office_admin: { label: 'Office admin', color: CHART_COLORS.ledger },
   user: { label: 'User / office', color: CHART_COLORS.inkSoft },
 };
 
@@ -38,7 +39,9 @@ const QUICK_LINKS = [
   { icon: ShieldCheck, label: 'Manage roles', to: '/admin/roles' },
   { icon: Settings, label: 'System settings', to: '/admin/settings' },
   { icon: Sparkles, label: 'AI settings', to: '/admin/ai-settings' },
-  { icon: Tags, label: 'Categories & offices', to: '/admin/lookups' },
+  { icon: Archive, label: 'Offices', to: '/admin/offices' },
+  { icon: Tags, label: 'Categories', to: '/admin/categories' },
+  { icon: ListChecks, label: 'Request types', to: '/admin/request-types' },
   { icon: ListChecks, label: 'Required documents', to: '/admin/required-documents' },
   { icon: Target, label: 'Strategic objectives', to: '/admin/objectives' },
   { icon: ShieldCheck, label: 'Governance', to: '/admin/governance' },
@@ -99,7 +102,7 @@ export default function AdminOverview() {
       active,
       inactive: users.length - active,
       systemAdmins: users.filter((u) => u.role === 'system_admin').length,
-      osmAdmins: users.filter((u) => u.role === 'osm_admin').length,
+      osmAdmins: users.filter((u) => u.role === 'office_admin').length,
       officeUsers: users.filter((u) => u.role === 'user').length,
     };
   }, [d]);
@@ -155,7 +158,7 @@ export default function AdminOverview() {
 
   return (
     <DashboardShell eyebrow="System / super admin" title="System overview">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       {loading ? (
         <p className="loading-text">Loading overview…</p>
@@ -193,7 +196,7 @@ export default function AdminOverview() {
             </div>
             <div className="stat-card">
               <div className="stat-value">{stats.osmAdmins}</div>
-              <div className="stat-label">OSM admins</div>
+              <div className="stat-label">Office admins</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{stats.officeUsers}</div>
@@ -311,7 +314,9 @@ export default function AdminOverview() {
               </div>
 
               <div className="ov-panel-links">
-                <Link to="/admin/lookups">Categories &amp; offices →</Link>
+                <Link to="/admin/categories">Categories →</Link>
+                <Link to="/admin/offices">Offices →</Link>
+                <Link to="/admin/request-types">Request types →</Link>
                 <Link to="/admin/required-documents">Required documents →</Link>
                 <Link to="/admin/objectives">Strategic objectives →</Link>
               </div>

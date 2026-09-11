@@ -46,9 +46,9 @@ class BenchmarkDocuments extends Command
             $this->seed($rows);
         }
 
-        $admin = User::where('role', User::ROLE_OSM_ADMIN)->first();
+        $admin = User::where('role', User::ROLE_OFFICE_ADMIN)->first();
         if ($admin === null) {
-            $this->error('No osm_admin user found — run the database seeders first.');
+            $this->error('No office_admin user found — run the database seeders first.');
 
             return self::FAILURE;
         }

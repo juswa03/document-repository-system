@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * Task F-01 / F-03 — role-based access control.
  *
  * Decision 0.2 was ratified as Option B: three roles
- * (user / osm_admin / system_admin), no reviewer/approver split.
+ * (user / office_admin / system_admin), no reviewer/approver split.
  * These tests lock in every cell of docs/role-permission-matrix.md —
  * both the capability map (App\Authorization\RoleMatrix) and the routes
  * that enforce it (FR-07 / E-11).
@@ -54,7 +54,7 @@ class RbacTest extends ConformanceTestCase
     public function test_the_three_roles_are_exactly_the_documented_set(): void
     {
         $this->assertSame(
-            ['user', 'osm_admin', 'system_admin'],
+            ['user', 'office_admin', 'system_admin'],
             array_keys(RoleMatrix::map()),
         );
         $this->assertSame(User::ROLES, array_keys(RoleMatrix::map()));
@@ -87,26 +87,26 @@ class RbacTest extends ConformanceTestCase
     {
         return [
             // user is confined to its own submissions
-            'user → review queue'          => ['user@example.test', 'getJson', '/api/osm-admin/queue'],
-            'user → osm stats'             => ['user@example.test', 'getJson', '/api/osm-admin/stats'],
-            'user → retention overview'    => ['user@example.test', 'getJson', '/api/osm-admin/retention'],
+            'user → review queue'          => ['user@example.test', 'getJson', '/api/office-admin/queue'],
+            'user → osm stats'             => ['user@example.test', 'getJson', '/api/office-admin/stats'],
+            'user → retention overview'    => ['user@example.test', 'getJson', '/api/office-admin/retention'],
             'user → admin users'           => ['user@example.test', 'getJson', '/api/admin/users'],
             'user → role matrix'           => ['user@example.test', 'getJson', '/api/admin/role-matrix'],
             'user → repository'            => ['user@example.test', 'getJson', '/api/repository/documents'],
             'user → reports'              => ['user@example.test', 'getJson', '/api/reports/documents'],
 
-            // osm_admin runs review but not the platform
-            'osm_admin → admin users'      => ['osm.admin@example.test', 'getJson', '/api/admin/users'],
-            'osm_admin → role matrix'      => ['osm.admin@example.test', 'getJson', '/api/admin/role-matrix'],
-            'osm_admin → audit log'        => ['osm.admin@example.test', 'getJson', '/api/admin/audit-log'],
-            'osm_admin → ai settings'      => ['osm.admin@example.test', 'getJson', '/api/admin/ai-settings'],
-            'osm_admin → system settings'  => ['osm.admin@example.test', 'getJson', '/api/admin/settings'],
+            // office_admin runs review but not the platform
+            'office_admin → admin users'      => ['office.admin@example.test', 'getJson', '/api/admin/users'],
+            'office_admin → role matrix'      => ['office.admin@example.test', 'getJson', '/api/admin/role-matrix'],
+            'office_admin → audit log'        => ['office.admin@example.test', 'getJson', '/api/admin/audit-log'],
+            'office_admin → ai settings'      => ['office.admin@example.test', 'getJson', '/api/admin/ai-settings'],
+            'office_admin → system settings'  => ['office.admin@example.test', 'getJson', '/api/admin/settings'],
 
             // system_admin is platform-only — no document decisions, no submitting
-            'system_admin → review queue'  => ['system.admin@example.test', 'getJson', '/api/osm-admin/queue'],
-            'system_admin → osm stats'     => ['system.admin@example.test', 'getJson', '/api/osm-admin/stats'],
-            'system_admin → retention'     => ['system.admin@example.test', 'getJson', '/api/osm-admin/retention'],
-            'system_admin → post review'   => ['system.admin@example.test', 'postJson', '/api/osm-admin/reviews'],
+            'system_admin → review queue'  => ['system.admin@example.test', 'getJson', '/api/office-admin/queue'],
+            'system_admin → osm stats'     => ['system.admin@example.test', 'getJson', '/api/office-admin/stats'],
+            'system_admin → retention'     => ['system.admin@example.test', 'getJson', '/api/office-admin/retention'],
+            'system_admin → post review'   => ['system.admin@example.test', 'postJson', '/api/office-admin/reviews'],
             'system_admin → own submissions' => ['system.admin@example.test', 'getJson', '/api/dashboard/submissions'],
             'system_admin → submit document' => ['system.admin@example.test', 'postJson', '/api/dashboard/documents'],
         ];
@@ -126,10 +126,10 @@ class RbacTest extends ConformanceTestCase
     {
         return [
             'user → own submissions'        => ['user@example.test', '/api/dashboard/submissions'],
-            'osm_admin → review queue'      => ['osm.admin@example.test', '/api/osm-admin/queue'],
-            'osm_admin → retention'         => ['osm.admin@example.test', '/api/osm-admin/retention'],
-            'osm_admin → repository'        => ['osm.admin@example.test', '/api/repository/documents'],
-            'osm_admin → reports'           => ['osm.admin@example.test', '/api/reports'],
+            'office_admin → review queue'      => ['office.admin@example.test', '/api/office-admin/queue'],
+            'office_admin → retention'         => ['office.admin@example.test', '/api/office-admin/retention'],
+            'office_admin → repository'        => ['office.admin@example.test', '/api/repository/documents'],
+            'office_admin → reports'           => ['office.admin@example.test', '/api/reports'],
             'system_admin → admin users'    => ['system.admin@example.test', '/api/admin/users'],
             'system_admin → role matrix'    => ['system.admin@example.test', '/api/admin/role-matrix'],
             'system_admin → repository'     => ['system.admin@example.test', '/api/repository/documents'],
@@ -147,7 +147,7 @@ class RbacTest extends ConformanceTestCase
     {
         $this->asSystemAdmin()->getJson('/api/admin/role-matrix')
             ->assertOk()
-            ->assertJsonPath('roles', ['user', 'osm_admin', 'system_admin'])
+            ->assertJsonPath('roles', ['user', 'office_admin', 'system_admin'])
             ->assertJsonPath('rows.0.capability', Capability::cases()[0]->value)
             ->assertJsonCount(count(Capability::cases()), 'rows');
     }

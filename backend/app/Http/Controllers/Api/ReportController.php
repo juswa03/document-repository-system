@@ -8,6 +8,7 @@ use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\DocumentAiSuggestion;
 use App\Models\SystemSetting;
+use App\Models\User;
 use App\Reports\Registry;
 use App\Reports\Report;
 use Illuminate\Http\Request;
@@ -18,9 +19,14 @@ class ReportController extends Controller
 {
     /**
      * Reports worth an AI narrative — aggregate/scored reports where a
-     * sentence of context adds something over the table. The raw-list
-     * reports (inventory, retrieval log, audit trail, ...) have nothing
-     * for a narrative to say that the rows don't already say directly.
+     * sentence of context adds something over the table. The remaining
+     * raw-list reports (inventory, retrieval log, ...) have nothing for a
+     * narrative to say that the rows don't already say directly.
+     *
+     * audit-trail is here for the "audit trail assistant" role (§F): a
+     * 5,000-row chronological log is precisely the case where a human
+     * cannot see the shape of the activity by reading it, and the
+     * report's summary() supplies real aggregates to narrate.
      *
      * @var list<string>
      */
@@ -28,6 +34,7 @@ class ReportController extends Controller
         'compliance-evidence',
         'office-submission-compliance',
         'document-aging',
+        'audit-trail',
     ];
 
     public function __construct(private readonly Registry $registry) {}
@@ -63,12 +70,20 @@ class ReportController extends Controller
             'date_to' => ['nullable', 'date'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'office_id' => ['nullable', 'exists:offices,id'],
+            'reporting_period' => ['nullable', 'string', 'max:120'],
+            // Deliberately not 'draft': a draft is the uploader's private
+            // work-in-progress and is never part of a report.
             'status' => ['nullable', 'in:pending,approved,rejected,revision'],
             'kind' => ['nullable', 'in:all,document,request'],
             'action' => ['nullable', 'string', 'max:50'],
             'actor_id' => ['nullable', 'exists:users,id'],
             'format' => ['nullable', 'in:json,csv'],
         ]);
+
+        // office_admin sees only their own office's data.
+        if ($request->user()->role === User::ROLE_OFFICE_ADMIN && $request->user()->office_id) {
+            $filters['office_id'] = $request->user()->office_id;
+        }
 
         $filters = array_intersect_key($filters, array_flip($definition->acceptedFilters()));
         $rows = $definition->rows($filters);
@@ -139,11 +154,26 @@ class ReportController extends Controller
             return response()->json(['message' => 'This month\'s AI spend cap has been reached.'], 422);
         }
 
+        // The same filter surface the report itself accepts — otherwise a
+        // date-ranged audit narrative would silently describe all history
+        // instead of the window the caller is looking at.
         $filters = $request->validate([
             'category_id' => ['nullable', 'exists:categories,id'],
             'office_id' => ['nullable', 'exists:offices,id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'action' => ['nullable', 'string', 'max:120'],
+            'actor_id' => ['nullable', 'exists:users,id'],
         ]);
-        $filters = array_intersect_key($filters, array_flip($definition->acceptedFilters()));
+
+        if ($request->user()->role === User::ROLE_OFFICE_ADMIN && $request->user()->office_id) {
+            $filters['office_id'] = $request->user()->office_id;
+        }
+
+        $filters = array_filter(
+            array_intersect_key($filters, array_flip($definition->acceptedFilters())),
+            fn ($v) => $v !== null,
+        );
 
         $rows = $definition->rows($filters);
 
@@ -188,6 +218,10 @@ class ReportController extends Controller
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
         ]);
+
+        if ($request->user()->role === User::ROLE_OFFICE_ADMIN && $request->user()->office_id) {
+            $filters['office_id'] = $request->user()->office_id;
+        }
 
         $base = Document::query()->filter($filters + ['include_superseded' => true]);
 

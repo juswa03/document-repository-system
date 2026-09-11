@@ -4,6 +4,7 @@ import Modal from '../../components/Modal';
 import Pager from '../../components/Pager';
 import api from '../../lib/api';
 import './dashboards.css';
+import Banner from '../../components/Banner';
 
 const SCOPE_LABELS = {
   categories: 'Document categories',
@@ -69,7 +70,7 @@ export default function Governance() {
 
   return (
     <DashboardShell eyebrow="System / super admin" title="Governance cadence">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <section className="panel">
         <div className="panel-header">
@@ -99,8 +100,9 @@ export default function Governance() {
                   <td>{SCOPE_LABELS[s.scope] || s.scope}</td>
                   <td className="cell-muted">{s.last_reviewed_at || 'Never'}</td>
                   <td className="cell-muted">{s.last_reviewed_by || '—'}</td>
-                  <td style={{ color: s.overdue ? 'var(--danger, #a1442f)' : undefined }}>
-                    {s.next_due_at}{s.overdue ? ' · overdue' : ''}
+                  <td className={s.overdue ? 'is-overdue' : undefined}>
+                    {s.next_due_at}
+                    {s.overdue && <span className="overdue-flag"> · overdue</span>}
                   </td>
                   <td className="cell-muted">every {s.cadence_months} mo</td>
                   <td>
@@ -153,7 +155,7 @@ export default function Governance() {
           onClose={() => setRecording(null)}
           width={520}
         >
-          <p className="cell-muted" style={{ marginTop: 0 }}>
+          <p className="cell-muted u-mt-0">
             Logs that this scope was reviewed today and resets its next-due date.
           </p>
           <div className="dash-field">

@@ -104,6 +104,9 @@ class LoginController extends Controller
             'email' => $user->email,
             'role' => $user->role,
             'office_id' => $user->office_id,
+            // Relative API path, not an absolute URL — the avatar is on
+            // the private disk and is fetched with the caller's token.
+            'avatar_url' => $user->avatarUrl(),
         ];
     }
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import Banner from './Banner';
 
 const KIND_LABEL = {
   classification: 'Category & type',
@@ -85,7 +86,7 @@ export default function AiSuggestionPanel({ documentId }) {
   useEffect(() => {
     let alive = true;
     api
-      .get(`/osm-admin/documents/${documentId}/ai-suggestions`)
+      .get(`/office-admin/documents/${documentId}/ai-suggestions`)
       .then(({ data }) => alive && setRows(data))
       .catch((err) =>
         alive && setError(err?.response?.data?.message || 'Could not load AI suggestions.')
@@ -99,7 +100,7 @@ export default function AiSuggestionPanel({ documentId }) {
     setBusyId(id);
     setError('');
     try {
-      const { data } = await api.post(`/osm-admin/ai-suggestions/${id}/${action}`);
+      const { data } = await api.post(`/office-admin/ai-suggestions/${id}/${action}`);
       setRows((prev) => prev.map((r) => (r.id === id ? data : r)));
     } catch (err) {
       setError(err?.response?.data?.message || `Could not ${action} that suggestion.`);
@@ -108,7 +109,7 @@ export default function AiSuggestionPanel({ documentId }) {
     }
   }
 
-  if (error) return <p className="error-banner">{error}</p>;
+  if (error) return <Banner tone="error">{error}</Banner>;
   if (rows === null) return <p className="loading-text">Loading AI suggestions…</p>;
   if (rows.length === 0)
     return (

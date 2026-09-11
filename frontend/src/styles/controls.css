@@ -1,0 +1,355 @@
+/* ============================================================================
+   Controls — the app-wide button + banner system.
+   Imported from src/index.css so every page (dashboards AND the auth
+   screens) gets the same .btn / .icon-btn / .banner without importing
+   dashboards.css. Page-specific chrome stays in each page's own CSS.
+
+   One rule: every clickable control renders through .btn or .icon-btn.
+   Base carries layout + interaction state (hover / active / focus-visible);
+   modifiers carry intent colour only. See DESIGN.md.
+   ========================================================================== */
+
+/* ---------- Button ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* sizes */
+.btn-sm {
+  padding: 0.35rem 0.7rem;
+  font-size: var(--text-xs);
+}
+
+.btn--lg {
+  padding: 0.8rem 1.1rem;
+  font-size: var(--text-base);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* intents */
+.btn--primary {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn--outline {
+  background: var(--paper);
+  border-color: var(--line);
+  color: var(--text-value);
+}
+
+.btn--outline:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--value-soft);
+}
+
+/* Text-only. Use where a third action would make one-filled-one-ghost
+   too noisy. */
+.btn--ghost {
+  background: transparent;
+  color: var(--accent);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+/* Solid destructive — the confirm step inside ConfirmDialog, not the
+   trigger sitting in a row of row-actions. */
+.btn--danger {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: var(--danger-hover);
+}
+
+.btn--danger-outline {
+  background: var(--paper);
+  border-color: var(--danger-soft);
+  color: var(--danger);
+}
+
+.btn--danger-outline:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ---------- Icon button ----------
+   Square, icon-only: modal close, sidebar toggle, notification bell,
+   pager arrows. Always give it an aria-label. */
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--text-value);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.icon-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--value-soft);
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* On dark structural surfaces the icon button is a quiet ghost, not a
+   light card. */
+.sidebar .icon-btn,
+.page-header .icon-btn {
+  background: var(--on-dark-fill);
+  border-color: var(--line);
+  color: var(--text-primary);
+}
+
+.sidebar .icon-btn:hover:not(:disabled),
+.page-header .icon-btn:hover:not(:disabled) {
+  background: var(--on-dark-fill-hover);
+  border-color: var(--on-dark-55);
+  color: var(--on-dark);
+}
+
+/* ---------- Surface ----------
+   One definition of "a card": paper ground + hairline border + radius +
+   resting shadow. Every card-shaped class in the app shares this selector
+   list, so it IS a surface without each of its (28+) call sites needing an
+   extra class; each class then adds only its own padding / layout in its
+   own file. Genuinely new card-shaped markup can also use `class="surface"`
+   directly. The --* modifiers tune elevation / radius from the default. */
+
+.surface,
+.panel,
+.stat-card,
+.ai-sugg-card,
+.auth-card,
+.modal-card,
+.bell-dropdown,
+.bell-toast {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Larger outer radius for the big shells. */
+.panel,
+.modal-card,
+.bell-dropdown {
+  border-radius: var(--radius-lg);
+}
+
+/* Things that float above content get the deep shadow. */
+.modal-card,
+.bell-dropdown,
+.bell-toast,
+.auth-card {
+  box-shadow: var(--shadow-lg);
+}
+
+/* The AI suggestion card is a flat inset, tighter radius. */
+.ai-sugg-card {
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+}
+
+.surface--raised { box-shadow: var(--shadow-md); }
+.surface--floating { box-shadow: var(--shadow-lg); }
+.surface--flat { box-shadow: none; }
+.surface--lg { border-radius: var(--radius-lg); }
+.surface--sm { border-radius: var(--radius-sm); }
+
+/* ---------- Banner ----------
+   One inline status message. tone = error | success | warning | info. */
+
+.banner {
+  padding: 0.7rem 0.9rem;
+  border-left: 4px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin-bottom: 1.25rem;
+}
+
+.banner--error {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-left-color: var(--danger);
+}
+
+.banner--success {
+  background: var(--success-soft);
+  color: var(--success);
+  border-left-color: var(--success);
+}
+
+.banner--warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border-left-color: var(--warning);
+}
+
+.banner--info {
+  background: var(--info-soft);
+  color: var(--info);
+  border-left-color: var(--info);
+}
+
+/* ---------- Skip link ----------
+   First focusable element in a layout shell. Off-screen until focused,
+   then pinned top-left so a keyboard user can jump past the nav. */
+.skip-link {
+  position: fixed;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: var(--z-toast);
+  padding: 0.5rem 0.9rem;
+  background: var(--paper);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-150%);
+  transition: transform var(--transition);
+}
+
+.skip-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  transform: translateY(0);
+}
+
+/* ---------- Skeleton ----------
+   Loading placeholder shaped like the content it replaces. Shimmer stops
+   under prefers-reduced-motion (handled globally in index.css). */
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base) 25%,
+    var(--skeleton-sheen) 37%,
+    var(--skeleton-base) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.3s ease infinite;
+}
+
+.skeleton + .skeleton {
+  margin-top: var(--space-2);
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ---------- Avatar ----------
+   A profile picture, or the user's initials when they have none. Sized
+   by the `size` prop rather than CSS so one component serves the sidebar
+   footer and the larger profile-page preview. */
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--paper-sunken);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.avatar--initials {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* ---------- Visually hidden ----------
+   Off-screen but still reachable by assistive tech and still clickable
+   programmatically — used for file inputs driven by a styled button. */
+.u-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

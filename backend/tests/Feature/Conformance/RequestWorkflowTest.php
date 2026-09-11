@@ -21,9 +21,9 @@ class RequestWorkflowTest extends ConformanceTestCase
     private function payload(array $overrides = []): array
     {
         return array_filter(array_merge([
-            'request_type_id' => $this->typeId('LVE'),
-            'title' => 'Annual leave — December',
-            'description' => 'Requesting five days of annual leave in the last week of December for family reasons.',
+            'request_type_id' => $this->typeId('SDR'),
+            'title' => 'Copy of the approved 2026 operational plan',
+            'description' => 'Requesting a copy of the approved 2026 operational plan for reference in our own planning.',
             'needed_by' => now()->addWeeks(3)->toDateString(),
             'access_level' => 'internal',
         ], $overrides), fn ($v) => $v !== null);
@@ -33,21 +33,26 @@ class RequestWorkflowTest extends ConformanceTestCase
     public function a_request_cannot_be_submitted_without_the_minimum_metadata(): void
     {
         $this->asUser()->postJson('/api/dashboard/requests', [
-            'request_type_id' => $this->typeId('LVE'),
+            'request_type_id' => $this->typeId('SDR'),
         ])->assertStatus(422)->assertJsonValidationErrors(['title', 'description', 'needed_by']);
     }
 
     #[Test]
-    public function budget_and_supply_requests_require_an_amount(): void
+    public function an_inactive_request_type_can_no_longer_be_submitted(): void
     {
-        $this->asUser()->postJson('/api/dashboard/requests', $this->payload([
-            'request_type_id' => $this->typeId('BUD'),
-        ]))->assertStatus(422)->assertJsonValidationErrors(['amount']);
+        // The administrative transaction types (leave, supply, travel,
+        // budget) were retired by deactivation, so old records still
+        // resolve while nobody can file a new one. Any inactive type
+        // behaves the same way.
+        $retired = RequestType::create([
+            'type_name' => 'Budget request',
+            'type_code' => 'BUD',
+            'is_active' => false,
+        ]);
 
         $this->asUser()->postJson('/api/dashboard/requests', $this->payload([
-            'request_type_id' => $this->typeId('BUD'),
-            'amount' => 15000,
-        ]))->assertCreated();
+            'request_type_id' => $retired->id,
+        ]))->assertStatus(422)->assertJsonValidationErrors(['request_type_id']);
     }
 
     #[Test]
@@ -56,9 +61,9 @@ class RequestWorkflowTest extends ConformanceTestCase
         $res = $this->asUser()->postJson('/api/dashboard/requests', $this->payload())
             ->assertCreated()
             ->assertJsonPath('status', 'pending')
-            ->assertJsonPath('title', 'Annual leave — December');
+            ->assertJsonPath('title', 'Copy of the approved 2026 operational plan');
 
-        $this->assertMatchesRegularExpression('/^LVE-\d{8}-\d{3}$/', $res->json('ref'));
+        $this->assertMatchesRegularExpression('/^SDR-\d{8}-\d{3}$/', $res->json('ref'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'request_submitted']);
     }
 
@@ -68,12 +73,12 @@ class RequestWorkflowTest extends ConformanceTestCase
         $id = $this->asUser()->postJson('/api/dashboard/requests', $this->payload())
             ->assertCreated()->json('id');
 
-        $queue = $this->asOsmAdmin()->getJson('/api/osm-admin/queue')->assertOk()->json('data');
+        $queue = $this->asOfficeAdmin()->getJson('/api/office-admin/queue')->assertOk()->json('data');
         $this->assertContains('request', collect($queue)->pluck('kind')->all());
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/requests/{$id}/assign", [
-            'assignee_id' => $this->userId('osm.admin@example.test'),
-        ])->assertOk()->assertJsonPath('assigned_to', $this->userId('osm.admin@example.test'));
+        $this->asOfficeAdmin()->postJson("/api/office-admin/requests/{$id}/assign", [
+            'assignee_id' => $this->userId('office.admin@example.test'),
+        ])->assertOk()->assertJsonPath('assigned_to', $this->userId('office.admin@example.test'));
     }
 
     #[Test]
@@ -82,11 +87,11 @@ class RequestWorkflowTest extends ConformanceTestCase
         $id = $this->asUser()->postJson('/api/dashboard/requests', $this->payload())
             ->assertCreated()->json('id');
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'request', 'id' => $id, 'decision' => 'approved',
         ])->assertStatus(422);
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'request', 'id' => $id, 'decision' => 'approved',
             'checklist' => $this->completeChecklist('request'),
         ])->assertCreated();
@@ -101,7 +106,7 @@ class RequestWorkflowTest extends ConformanceTestCase
             ->assertCreated()->json('id');
         $ref = SubmissionRequest::find($id)->tracking_no;
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'request', 'id' => $id, 'decision' => 'revision', 'remarks' => 'add the exact dates',
         ])->assertCreated();
 

@@ -25,7 +25,7 @@ class VersioningTest extends ConformanceTestCase
             ->postJson('/api/dashboard/documents', $this->documentPayload(['title' => 'Self-study report']))
             ->assertCreated()->json('id');
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'revision', 'remarks' => 'Fix the coverage period.',
         ])->assertCreated();
 
@@ -89,7 +89,7 @@ class VersioningTest extends ConformanceTestCase
         $this->actingAsEmail('other@example.test')
             ->getJson("/api/documents/{$doc->id}/versions")->assertForbidden();
 
-        $this->asOsmAdmin()->getJson("/api/documents/{$doc->id}/versions")->assertOk();
+        $this->asOfficeAdmin()->getJson("/api/documents/{$doc->id}/versions")->assertOk();
     }
 
     public function test_superseded_documents_are_hidden_from_repository_search_by_default(): void
@@ -99,11 +99,11 @@ class VersioningTest extends ConformanceTestCase
         $doc->update(['title' => 'Old policy', 'retention_status' => 'superseded']);
         $this->createDocument('user@example.test')->update(['title' => 'Current policy']);
 
-        $default = $this->asOsmAdmin()->getJson('/api/repository/documents')->assertOk()->json('data');
+        $default = $this->asOfficeAdmin()->getJson('/api/repository/documents')->assertOk()->json('data');
         $this->assertNotContains('Old policy', array_column($default, 'title'));
         $this->assertContains('Current policy', array_column($default, 'title'));
 
-        $all = $this->asOsmAdmin()->getJson('/api/repository/documents?include_superseded=1')->assertOk()->json('data');
+        $all = $this->asOfficeAdmin()->getJson('/api/repository/documents?include_superseded=1')->assertOk()->json('data');
         $this->assertContains('Old policy', array_column($all, 'title'));
     }
 }

@@ -30,15 +30,15 @@ class DashboardStatsTest extends ConformanceTestCase
         $b = $this->upload();
         $this->upload(); // stays pending
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $a, 'decision' => 'approved',
             'checklist' => $this->completeChecklist(),
         ])->assertCreated();
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $b, 'decision' => 'revision', 'remarks' => 'fix it',
         ])->assertCreated();
 
-        $this->asOsmAdmin()->getJson('/api/osm-admin/stats')
+        $this->asOfficeAdmin()->getJson('/api/office-admin/stats')
             ->assertOk()
             ->assertJsonPath('documents.total', 3)
             ->assertJsonPath('documents.pending', 1)
@@ -55,14 +55,14 @@ class DashboardStatsTest extends ConformanceTestCase
         $this->createDocument('user@example.test', ['retention_status' => 'superseded']);
         $this->createDocument('user@example.test', ['retention_status' => 'archived']);
 
-        $this->asOsmAdmin()->getJson('/api/osm-admin/stats')
+        $this->asOfficeAdmin()->getJson('/api/office-admin/stats')
             ->assertOk()
             ->assertJsonPath('documents.archived', 2);
     }
 
     public function test_stats_are_osm_admin_only(): void
     {
-        $this->asUser()->getJson('/api/osm-admin/stats')->assertForbidden();
-        $this->asSystemAdmin()->getJson('/api/osm-admin/stats')->assertForbidden();
+        $this->asUser()->getJson('/api/office-admin/stats')->assertForbidden();
+        $this->asSystemAdmin()->getJson('/api/office-admin/stats')->assertForbidden();
     }
 }

@@ -5,23 +5,24 @@ namespace Tests\Feature\Conformance;
 use App\Models\Category;
 
 /**
- * FR-02 — the seeded document categories are the nine OSM categories
+ * FR-02 — the seeded document categories are the ten OSM categories
  * from §A of the process-flow document (decision 0.6).
  */
 class LookupDataTest extends ConformanceTestCase
 {
-    public function test_the_nine_documented_categories_are_seeded(): void
+    public function test_the_ten_documented_categories_are_seeded(): void
     {
         $expected = [
-            'STRAT' => 'Strategic Planning',
-            'PERF' => 'Performance Monitoring',
-            'ACCR' => 'Accreditation & Quality Assurance',
-            'RANK' => 'Rankings & Internationalization',
-            'GOV' => 'Governance',
-            'INFRA' => 'Infrastructure & Development Planning',
-            'COMP' => 'Compliance & Regulatory',
-            'TMPL' => 'Templates & Controlled Forms',
-            'ADMIN' => 'Administrative',
+            'STRAT' => 'Strategic Planning Documents',
+            'PERF' => 'Performance Monitoring Documents',
+            'ACCR' => 'Accreditation and Quality Assurance Documents',
+            'RANK' => 'Rankings and Internationalization Documents',
+            'GOV' => 'Governance Documents',
+            'INFRA' => 'Infrastructure and Development Planning Documents',
+            'COMP' => 'Compliance and Regulatory Documents',
+            'TMPL' => 'Templates and Controlled Forms',
+            'ADMIN' => 'Administrative Documents',
+            'ARCH' => 'Archived Documents',
         ];
 
         $this->assertEqualsCanonicalizing(
@@ -34,7 +35,7 @@ class LookupDataTest extends ConformanceTestCase
     {
         $this->asUser()->getJson('/api/categories')
             ->assertOk()
-            ->assertJsonCount(9)
+            ->assertJsonCount(10)
             ->assertJsonFragment(['category_code' => 'ACCR']);
     }
 }

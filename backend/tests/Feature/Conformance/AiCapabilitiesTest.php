@@ -158,7 +158,7 @@ class AiCapabilitiesTest extends ConformanceTestCase
         $fake->classification = $this->classification(Category::query()->value('category_name'));
         $this->runJobWith($fake, $document);
 
-        $this->asOsmAdmin()->getJson("/api/osm-admin/documents/{$document->id}/ai-suggestions")
+        $this->asOfficeAdmin()->getJson("/api/office-admin/documents/{$document->id}/ai-suggestions")
             ->assertOk()
             ->assertJsonCount(1)
             ->assertJsonPath('0.kind', 'classification')
@@ -173,8 +173,8 @@ class AiCapabilitiesTest extends ConformanceTestCase
         $this->runJobWith($fake, $document);
         $suggestion = $document->aiSuggestions()->firstOrFail();
 
-        $this->asUser()->getJson("/api/osm-admin/documents/{$document->id}/ai-suggestions")->assertForbidden();
-        $this->asUser()->postJson("/api/osm-admin/ai-suggestions/{$suggestion->id}/accept")->assertForbidden();
+        $this->asUser()->getJson("/api/office-admin/documents/{$document->id}/ai-suggestions")->assertForbidden();
+        $this->asUser()->postJson("/api/office-admin/ai-suggestions/{$suggestion->id}/accept")->assertForbidden();
     }
 
     public function test_accepting_a_classification_applies_it_to_the_document(): void
@@ -188,7 +188,7 @@ class AiCapabilitiesTest extends ConformanceTestCase
 
         $suggestion = $document->aiSuggestions()->firstOrFail();
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/ai-suggestions/{$suggestion->id}/accept")
+        $this->asOfficeAdmin()->postJson("/api/office-admin/ai-suggestions/{$suggestion->id}/accept")
             ->assertOk()
             ->assertJsonPath('status', 'accepted');
 
@@ -208,7 +208,7 @@ class AiCapabilitiesTest extends ConformanceTestCase
         $this->runJobWith($fake, $document);
 
         $suggestion = $document->aiSuggestions()->firstOrFail();
-        $this->asOsmAdmin()->postJson("/api/osm-admin/ai-suggestions/{$suggestion->id}/accept")->assertOk();
+        $this->asOfficeAdmin()->postJson("/api/office-admin/ai-suggestions/{$suggestion->id}/accept")->assertOk();
 
         $this->assertSame($before, $document->fresh()->only(['category_id', 'document_type']));
     }
@@ -222,8 +222,8 @@ class AiCapabilitiesTest extends ConformanceTestCase
 
         $suggestion = $document->aiSuggestions()->firstOrFail();
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/ai-suggestions/{$suggestion->id}/dismiss")->assertOk();
-        $this->asOsmAdmin()->postJson("/api/osm-admin/ai-suggestions/{$suggestion->id}/accept")->assertStatus(422);
+        $this->asOfficeAdmin()->postJson("/api/office-admin/ai-suggestions/{$suggestion->id}/dismiss")->assertOk();
+        $this->asOfficeAdmin()->postJson("/api/office-admin/ai-suggestions/{$suggestion->id}/accept")->assertStatus(422);
 
         $this->assertDatabaseHas('audit_logs', ['action' => 'ai_suggestion_dismissed']);
     }

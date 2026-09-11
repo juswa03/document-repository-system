@@ -14,11 +14,13 @@ export const CHART_COLORS = {
   paperRaised: '#f8f8f4',
 };
 
+/** Chart-side status colours. Labels match src/lib/statusLabels.js. */
 export const STATUS_META = {
-  pending: { label: 'Pending review', color: CHART_COLORS.inkSoft },
+  draft: { label: 'Draft', color: CHART_COLORS.line },
+  pending: { label: 'For review', color: CHART_COLORS.inkSoft },
   approved: { label: 'Approved', color: CHART_COLORS.seal },
   rejected: { label: 'Rejected', color: CHART_COLORS.danger },
-  revision: { label: 'Needs revision', color: CHART_COLORS.ledger },
+  revision: { label: 'For revision', color: CHART_COLORS.ledger },
 };
 
 export function monthLabel(yearMonth) {

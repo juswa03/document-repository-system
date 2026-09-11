@@ -19,7 +19,7 @@ class LoginEndpointTest extends ConformanceTestCase
     {
         return [
             ['system.admin@example.test', 'system_admin', '/admin'],
-            ['osm.admin@example.test', 'osm_admin', '/osm-admin'],
+            ['office.admin@example.test', 'office_admin', '/office-admin'],
             ['user@example.test', 'user', '/dashboard'],
         ];
     }

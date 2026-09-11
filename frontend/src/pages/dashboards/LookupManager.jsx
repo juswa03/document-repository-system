@@ -1,58 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import LookupFormModal from './LookupFormModal';
+import Pager from '../../components/Pager';
+import usePagination from '../../lib/usePagination';
 import api from '../../lib/api';
 import './dashboards.css';
+import Banner from '../../components/Banner';
 
-const TABS = {
-  offices: {
-    key: 'offices',
-    label: 'Offices',
-    singular: 'Office',
-    listEndpoint: '/offices',
-    createEndpoint: '/admin/offices',
-    updateEndpoint: (id) => `/admin/offices/${id}`,
-    nameField: 'office_name',
-    codeField: 'office_code',
-    nameLabel: 'Office name',
-    codeLabel: 'Office code',
-  },
-  categories: {
-    key: 'categories',
-    label: 'Categories',
-    singular: 'Category',
-    listEndpoint: '/categories',
-    createEndpoint: '/admin/categories',
-    updateEndpoint: (id) => `/admin/categories/${id}`,
-    nameField: 'category_name',
-    codeField: 'category_code',
-    nameLabel: 'Category name',
-    codeLabel: 'Category code',
-  },
-  requestTypes: {
-    key: 'requestTypes',
-    label: 'Request types',
-    singular: 'Request type',
-    listEndpoint: '/request-types',
-    createEndpoint: '/admin/request-types',
-    updateEndpoint: (id) => `/admin/request-types/${id}`,
-    nameField: 'type_name',
-    codeField: 'type_code',
-    nameLabel: 'Request type name',
-    codeLabel: 'Request type code',
-  },
-};
-
-export default function ManageLookups() {
-  const [activeTab, setActiveTab] = useState('offices');
+/**
+ * Shared CRUD table for a single lookup type (offices, categories, or
+ * request types) — each gets its own sidebar page and route, but they all
+ * share the same list/search/create/edit/deactivate shape.
+ */
+export default function LookupManager({ config, eyebrow = 'System / super admin' }) {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null);
   const [busyId, setBusyId] = useState(null);
-
-  const config = TABS[activeTab];
 
   const visible = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -63,6 +29,8 @@ export default function ManageLookups() {
         String(i[config.codeField] || '').toLowerCase().includes(term)
     );
   }, [items, q, config]);
+
+  const { pageItems, page, setPage, meta } = usePagination(visible);
 
   async function load() {
     setLoading(true);
@@ -91,26 +59,13 @@ export default function ManageLookups() {
   }
 
   useEffect(() => {
-    setQ('');
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [config.key]);
 
   return (
-    <DashboardShell eyebrow="System / super admin" title="Categories, offices &amp; request types">
-      {error && <p className="error-banner">{error}</p>}
-
-      <div className="tab-row">
-        {Object.values(TABS).map((t) => (
-          <button
-            key={t.key}
-            className={`tab-btn ${activeTab === t.key ? 'is-active' : ''}`}
-            onClick={() => setActiveTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <DashboardShell eyebrow={eyebrow} title={config.label}>
+      {error && <Banner tone="error">{error}</Banner>}
 
       <section className="panel">
         <div className="panel-header">
@@ -128,7 +83,7 @@ export default function ManageLookups() {
 
         <div className="filter-bar">
           <div className="filter-field filter-field--grow">
-            <label htmlFor="lookup-search" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="lookup-search">
               Search
             </label>
             <input
@@ -161,7 +116,7 @@ export default function ManageLookups() {
                   </td>
                 </tr>
               )}
-              {visible.map((item) => (
+              {pageItems.map((item) => (
                 <tr key={item.id} style={item.is_active === false ? { opacity: 0.55 } : undefined}>
                   <td>{item[config.nameField]}</td>
                   <td className="cell-mono">{item[config.codeField]}</td>
@@ -189,6 +144,7 @@ export default function ManageLookups() {
             </tbody>
           </table>
         )}
+        <Pager meta={meta} page={page} onPage={setPage} />
       </section>
 
       {modal && (

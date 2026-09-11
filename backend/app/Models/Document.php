@@ -30,6 +30,52 @@ class Document extends Model
     /** Decision 0.4 — retention lifecycle (DR-14), separate from `status`. */
     public const RETENTION_STATUSES = ['active', 'superseded', 'archived', 'disposed'];
 
+    /**
+     * Review lifecycle. Distinct from RETENTION_STATUSES: this tracks how
+     * far a submission has got through review, retention tracks whether
+     * the approved record is still current.
+     *
+     *   draft    — being encoded by the uploader, not yet submitted. Not
+     *              in anyone's queue and not counted in review stats.
+     *   pending  — submitted, awaiting a decision. Displayed as
+     *              "Submitted" until a reviewer is assigned and
+     *              "For review" after — see reviewStage().
+     *   revision — returned to the uploader to fix and resubmit.
+     *   approved / rejected — terminal.
+     */
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_REVISION = 'revision';
+
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_REJECTED = 'rejected';
+
+    public const STATUSES = [
+        self::STATUS_DRAFT,
+        self::STATUS_PENDING,
+        self::STATUS_REVISION,
+        self::STATUS_APPROVED,
+        self::STATUS_REJECTED,
+    ];
+
+    /**
+     * The label dimension the flow calls "Submitted" vs "For Review".
+     * Both are `pending` in the database — a submission becomes "for
+     * review" the moment a reviewer is on it, so this is derived from
+     * assignment rather than stored as a separate status.
+     */
+    public function reviewStage(): string
+    {
+        if ($this->status !== self::STATUS_PENDING) {
+            return $this->status;
+        }
+
+        return $this->assigned_to === null ? 'submitted' : 'for_review';
+    }
+
     protected $fillable = [
         'tracking_no',
         'title',
@@ -50,6 +96,7 @@ class Document extends Model
         'file_size',
         'content_hash',
         'status',
+        'target_office_id',
         'assigned_to',
         'assigned_at',
         'retention_status',
@@ -83,6 +130,10 @@ class Document extends Model
     public function scopeFilter(Builder $query, array $filters): Builder
     {
         return $query
+            // A draft is the uploader's private work-in-progress — it has
+            // no tracking number and has never been submitted, so it must
+            // never surface in the repository, in search, or in a report.
+            ->where('status', '!=', self::STATUS_DRAFT)
             ->unless(($filters['include_superseded'] ?? false) || ($filters['retention_status'] ?? false),
                 fn (Builder $q) => $q->where('retention_status', 'active'))
             ->when($filters['q'] ?? null, function (Builder $q, string $term) {
@@ -209,6 +260,7 @@ class Document extends Model
         return $query
             ->where('content_hash', $hash)
             ->where('retention_status', 'active')
+            ->where('status', '!=', self::STATUS_DRAFT)
             ->where(function (Builder $q) use ($user) {
                 $q->where('uploaded_by', $user->id)
                     ->when($user->office_id, fn (Builder $qq, $office) => $qq->orWhere('office_id', $office));
@@ -225,7 +277,7 @@ class Document extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    /** The OSM admin currently responsible for reviewing this (Phase 4.3). */
+    /** The office_admin currently responsible for reviewing this (Phase 4.3). */
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
@@ -271,7 +323,7 @@ class Document extends Model
     /**
      * Access-level enforcement (FR-06 / BR-04). public/internal are open
      * to any authenticated user; restricted/confidential need the
-     * uploader, an OSM admin (who reviews and runs the repository), or an
+     * uploader, an office_admin of the document's target office, or an
      * active access grant for the user or their office. Platform
      * (system_admin) is deliberately not need-to-know for restricted
      * content.
@@ -282,7 +334,12 @@ class Document extends Model
             return true;
         }
 
-        if ($this->uploaded_by === $user->id || $user->role === User::ROLE_OSM_ADMIN) {
+        if ($this->uploaded_by === $user->id) {
+            return true;
+        }
+
+        if ($user->role === User::ROLE_OFFICE_ADMIN
+            && ($this->target_office_id === null || $this->target_office_id === $user->office_id)) {
             return true;
         }
 
@@ -290,15 +347,31 @@ class Document extends Model
     }
 
     /**
-     * Restrict a query to documents the user may see. Mirrors
+     * Restrict a query to documents the user may see. office_admin sees
+     * all documents routed to their office (restricted/confidential
+     * included — they are the reviewers). system_admin is platform-only
+     * and not need-to-know for restricted content. Mirrors
      * isAccessibleBy() so the repository list never leaks a title.
      */
     public function scopeAccessibleBy(Builder $query, User $user): Builder
     {
-        if ($user->role === User::ROLE_OSM_ADMIN) {
-            return $query;
+        // A draft belongs to whoever is writing it and to nobody else —
+        // not even a reviewer, who has nothing to review until it is
+        // submitted.
+        $query->where(fn (Builder $q) => $q
+            ->where('status', '!=', self::STATUS_DRAFT)
+            ->orWhere('uploaded_by', $user->id));
+
+        if ($user->role === User::ROLE_OFFICE_ADMIN) {
+            // Office scope: all access levels within the office, plus
+            // unscoped (null) legacy rows visible to all offices.
+            return $query->where(fn (Builder $q) => $q
+                ->where('target_office_id', $user->office_id)
+                ->orWhereNull('target_office_id'));
         }
 
+        // system_admin and plain users: only public/internal, own uploads,
+        // or documents with an active access grant for them.
         return $query->where(function (Builder $q) use ($user) {
             $q->whereIn('access_level', ['public', 'internal'])
                 ->orWhere('uploaded_by', $user->id)

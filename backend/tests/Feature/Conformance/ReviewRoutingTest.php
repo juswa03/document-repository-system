@@ -32,7 +32,7 @@ class ReviewRoutingTest extends ConformanceTestCase
         $officeA = Office::create(['office_name' => 'Office Alpha', 'office_code' => 'ALPHA']);
         $officeB = Office::create(['office_name' => 'Office Beta', 'office_code' => 'BETA']);
 
-        $reviewerA = User::factory()->create(['role' => User::ROLE_OSM_ADMIN, 'office_id' => $officeA->id]);
+        $reviewerA = User::factory()->create(['role' => User::ROLE_OFFICE_ADMIN, 'office_id' => $officeA->id]);
         $uploaderA = User::factory()->create(['role' => User::ROLE_USER, 'office_id' => $officeA->id]);
         $uploaderB = User::factory()->create(['role' => User::ROLE_USER, 'office_id' => $officeB->id]);
 
@@ -42,7 +42,7 @@ class ReviewRoutingTest extends ConformanceTestCase
         $this->assertNull(Document::find($idA)->assigned_to, 'office_queue routing must not pre-assign');
 
         $unassigned = $this->actingAsEmail($reviewerA->email)
-            ->getJson('/api/osm-admin/queue?scope=unassigned')
+            ->getJson('/api/office-admin/queue?scope=unassigned')
             ->assertOk()->json('data');
 
         $refs = collect($unassigned)->pluck('id');
@@ -56,11 +56,11 @@ class ReviewRoutingTest extends ConformanceTestCase
         Storage::fake(Document::DISK);
         $id = $this->uploadAs('user@example.test');
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$id}/assign", [
-            'assignee_id' => $this->userId('osm.admin@example.test'),
-        ])->assertOk()->assertJsonPath('assigned_to', $this->userId('osm.admin@example.test'));
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$id}/assign", [
+            'assignee_id' => $this->userId('office.admin@example.test'),
+        ])->assertOk()->assertJsonPath('assigned_to', $this->userId('office.admin@example.test'));
 
-        $mine = $this->asOsmAdmin()->getJson('/api/osm-admin/queue?scope=mine')->assertOk()->json('data');
+        $mine = $this->asOfficeAdmin()->getJson('/api/office-admin/queue?scope=mine')->assertOk()->json('data');
         $this->assertSame([$id], collect($mine)->pluck('id')->all());
 
         $this->assertDatabaseHas('audit_logs', ['action' => 'document_assigned']);
@@ -70,10 +70,10 @@ class ReviewRoutingTest extends ConformanceTestCase
     public function reassigning_to_another_reviewer_notifies_them(): void
     {
         Storage::fake(Document::DISK);
-        $other = User::factory()->create(['role' => User::ROLE_OSM_ADMIN]);
+        $other = User::factory()->create(['role' => User::ROLE_OFFICE_ADMIN]);
         $id = $this->uploadAs('user@example.test');
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$id}/assign", [
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$id}/assign", [
             'assignee_id' => $other->id,
         ])->assertOk();
 
@@ -89,7 +89,7 @@ class ReviewRoutingTest extends ConformanceTestCase
         Storage::fake(Document::DISK);
         $id = $this->uploadAs('user@example.test');
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$id}/assign", [
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$id}/assign", [
             'assignee_id' => $this->userId('user@example.test'),
         ])->assertStatus(422);
     }
@@ -101,21 +101,21 @@ class ReviewRoutingTest extends ConformanceTestCase
         $id = $this->uploadAs('user@example.test');
 
         // No checklist at all.
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'approved',
         ])->assertStatus(422)->assertJsonStructure(['errors' => ['checklist']]);
 
         // A required item still unticked.
         $partial = $this->completeChecklist();
         $partial['metadata_complete'] = false;
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'approved', 'checklist' => $partial,
         ])->assertStatus(422);
 
         $this->assertSame('pending', Document::find($id)->status);
 
         // Fully confirmed → approved, and the checklist is recorded.
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'approved',
             'checklist' => $this->completeChecklist(),
         ])->assertCreated();
@@ -130,7 +130,7 @@ class ReviewRoutingTest extends ConformanceTestCase
         Storage::fake(Document::DISK);
         $id = $this->uploadAs('user@example.test');
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'revision', 'remarks' => 'fix the period',
         ])->assertCreated();
 
@@ -140,7 +140,7 @@ class ReviewRoutingTest extends ConformanceTestCase
     #[Test]
     public function review_config_lists_the_checklists(): void
     {
-        $this->asOsmAdmin()->getJson('/api/osm-admin/review-config')
+        $this->asOfficeAdmin()->getJson('/api/office-admin/review-config')
             ->assertOk()
             ->assertJsonPath('routing_strategy', config('review.routing.strategy'))
             ->assertJsonStructure([
@@ -154,10 +154,10 @@ class ReviewRoutingTest extends ConformanceTestCase
     {
         Storage::fake(Document::DISK);
         $id = $this->uploadAs('user@example.test');
-        $osmId = $this->userId('osm.admin@example.test');
+        $osmId = $this->userId('office.admin@example.test');
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$id}/assign", ['assignee_id' => $osmId])->assertOk();
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$id}/assign", ['assignee_id' => $osmId])->assertOk();
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'revision', 'remarks' => 'redo',
         ])->assertCreated();
 

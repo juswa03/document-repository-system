@@ -30,6 +30,22 @@ trait BuildsSuggestions
      */
     abstract protected function structuredCall(string $system, string $user, array $tool): ?array;
 
+    /**
+     * Active office names, for the metadata extractor to pick from.
+     * Constrained to an enum so the model can only name a real office —
+     * a hallucinated one would be unresolvable on accept.
+     *
+     * @return list<string>
+     */
+    private function officeNames(): array
+    {
+        return \App\Models\Office::query()
+            ->active()
+            ->orderBy('office_name')
+            ->pluck('office_name')
+            ->all();
+    }
+
     public function interpretSearch(string $query, array $categories, array $offices): ?array
     {
         if (! $this->isConfigured() || trim($query) === '') {
@@ -122,8 +138,26 @@ trait BuildsSuggestions
         $columns = $payload['columns'] ?? [];
         $sampleRows = $payload['sample_rows'] ?? [];
 
+        // A summary value may be a breakdown (action => count, user =>
+        // count), not just a scalar — flatten it readably rather than
+        // letting it stringify to "Array".
         $summaryLines = collect($summary)
-            ->map(fn ($v, $k) => "- {$k}: ".(is_bool($v) ? ($v ? 'yes' : 'no') : ($v ?? 'n/a')))
+            ->map(function ($v, $k) {
+                if (is_array($v)) {
+                    if ($v === []) {
+                        return "- {$k}: none";
+                    }
+
+                    $pairs = collect($v)
+                        ->take(15)
+                        ->map(fn ($count, $name) => is_int($name) ? (string) $count : "{$name} ({$count})")
+                        ->implode(', ');
+
+                    return "- {$k}: {$pairs}";
+                }
+
+                return "- {$k}: ".(is_bool($v) ? ($v ? 'yes' : 'no') : ($v ?? 'n/a'));
+            })
             ->implode("\n");
 
         $columnLabels = implode(', ', array_column($columns, 'label'));
@@ -279,23 +313,30 @@ trait BuildsSuggestions
             return null;
         }
 
+        $offices = $this->officeNames();
+
         $result = $this->structuredCall(
             system: 'You normalise document metadata. Propose tidier values only where an '
-                .'improvement is clear: a canonical reporting period (e.g. "AY 2025-2026"), '
-                .'5-8 specific lower-case keywords, a fuller one-paragraph description, and '
-                .'the document date in YYYY-MM-DD if it is stated or strongly implied. Leave '
-                .'a field out if the current value is already good.',
-            user: $document->toPromptText(),
+                .'improvement is clear: a clearer official title, a canonical reporting '
+                .'period (e.g. "AY 2025-2026"), 5-8 specific lower-case keywords, a fuller '
+                .'one-paragraph description, and the document date in YYYY-MM-DD if it is '
+                .'stated or strongly implied. If the text clearly names the office or unit '
+                .'that owns the document, name it too — exactly as listed, or leave it out. '
+                .'Leave any field out if the current value is already good.',
+            user: $document->toPromptText()
+                .($offices === [] ? '' : "\nKnown offices: ".implode(', ', $offices)),
             tool: [
                 'name' => 'record_metadata',
                 'description' => 'Record the suggested metadata values.',
                 'schema' => [
                     'type' => 'object',
                     'properties' => [
+                        'title' => ['type' => 'string'],
                         'reporting_period' => ['type' => 'string'],
                         'keywords' => ['type' => 'string'],
                         'description' => ['type' => 'string'],
                         'document_date' => ['type' => 'string'],
+                        'office' => ['type' => 'string', 'enum' => [...$offices, '']],
                         'confidence' => ['type' => 'number', 'minimum' => 0, 'maximum' => 1],
                         'summary' => ['type' => 'string'],
                     ],
@@ -311,10 +352,14 @@ trait BuildsSuggestions
         [$input, $usage] = $result;
 
         $fields = array_filter([
+            'title' => $input['title'] ?? null,
             'reporting_period' => $input['reporting_period'] ?? null,
             'keywords' => $input['keywords'] ?? null,
             'description' => $input['description'] ?? null,
             'document_date' => $input['document_date'] ?? null,
+            // The owning office, as a name — AiSuggestionController
+            // resolves it to an id when the suggestion is accepted.
+            'office' => $input['office'] ?? null,
         ], fn ($v) => is_string($v) && trim($v) !== '');
 
         if ($fields === []) {

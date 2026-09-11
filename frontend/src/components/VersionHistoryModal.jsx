@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import api from '../lib/api';
+import Banner from './Banner';
+import StatusBadge from './StatusBadge';
 
 /**
  * Read-only view of a document's version history (FR-11 / FR-12).
@@ -25,7 +27,7 @@ export default function VersionHistoryModal({ documentId, reference, onClose }) 
 
   return (
     <Modal title={`Version history — ${reference || ''}`} onClose={onClose} width={640}>
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
       {!data && !error && <p className="loading-text">Loading…</p>}
 
       {data && (
@@ -33,13 +35,14 @@ export default function VersionHistoryModal({ documentId, reference, onClose }) 
           <p className="panel-subtitle">
             Current version {data.current_version} · retention status: {data.retention_status}
           </p>
-          <div style={{ overflowX: 'auto' }}>
+          <div className="u-scroll-x">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Version</th>
                   <th>Title</th>
                   <th>Type</th>
+                  <th>Decision</th>
                   <th>Superseded</th>
                   <th>Reviewer remarks</th>
                 </tr>
@@ -53,10 +56,30 @@ export default function VersionHistoryModal({ documentId, reference, onClose }) 
                     </td>
                     <td>{v.title}</td>
                     <td>{v.document_type || '—'}</td>
-                    <td className="cell-muted">
-                      {v.superseded_at ? new Date(v.superseded_at).toLocaleDateString() : '—'}
+                    <td>
+                      {v.decision ? (
+                        <StatusBadge status={v.decision} />
+                      ) : (
+                        <span className="cell-muted">Awaiting review</span>
+                      )}
                     </td>
-                    <td className="cell-muted">{v.review_remarks || '—'}</td>
+                    {/* The current version has not been superseded by
+                        anything — that blank is structural, not missing
+                        data, so it says so rather than showing a dash. */}
+                    <td className="cell-muted">
+                      {v.superseded_at
+                        ? new Date(v.superseded_at).toLocaleDateString()
+                        : v.is_current
+                          ? 'In force'
+                          : '—'}
+                    </td>
+                    <td className="cell-muted">
+                      {v.review_remarks || (
+                        <span className="cell-muted">
+                          {v.decision === 'approved' ? 'No remarks' : '—'}
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

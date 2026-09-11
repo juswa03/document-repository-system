@@ -25,7 +25,7 @@ export default function ForgotPassword() {
     <AuthLayout eyebrow="REC · reset" title="Reset your password">
       {status === 'sent' ? (
         <>
-          <p className="auth-success">
+          <p className="banner banner--success">
             If that email is registered, a reset link is on its way. Check your inbox (and spam folder).
           </p>
           <Link to="/login" className="auth-link">← Back to sign in</Link>
@@ -47,8 +47,12 @@ export default function ForgotPassword() {
               placeholder="you@office.gov"
             />
           </div>
-          {error && <p className="auth-error">{error}</p>}
-          <button type="submit" className="auth-submit" disabled={status === 'sending'}>
+          {error && <p className="banner banner--error" role="alert">{error}</p>}
+          <button
+            type="submit"
+            className="btn btn--primary btn--lg btn--block"
+            disabled={status === 'sending'}
+          >
             {status === 'sending' ? 'Sending…' : 'Send reset link'}
           </button>
           <Link to="/login" className="auth-link">← Back to sign in</Link>

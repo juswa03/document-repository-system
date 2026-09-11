@@ -14,6 +14,9 @@ class Review extends Model
         'decision',
         'remarks',
         'checklist',
+        'response_file_path',
+        'response_file_name',
+        'response_document_id',
         'reviewed_at',
     ];
 
@@ -23,6 +26,16 @@ class Review extends Model
             'reviewed_at' => 'datetime',
             'checklist' => 'array',
         ];
+    }
+
+    /**
+     * A repository document handed over as the answer, as an alternative
+     * to uploading a fresh file. Distinct from document(), which is the
+     * document being REVIEWED.
+     */
+    public function responseDocument(): BelongsTo
+    {
+        return $this->belongsTo(Document::class, 'response_document_id');
     }
 
     public function document(): BelongsTo

@@ -42,6 +42,7 @@ class AuditLogController extends Controller
             'meta' => [
                 'current_page' => $logs->currentPage(),
                 'last_page' => $logs->lastPage(),
+                'per_page' => $logs->perPage(),
                 'total' => $logs->total(),
             ],
             'available_actions' => AuditLog::query()->distinct()->orderBy('action')->pluck('action'),

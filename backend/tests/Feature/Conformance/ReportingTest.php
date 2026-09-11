@@ -14,7 +14,7 @@ class ReportingTest extends ConformanceTestCase
 {
     public function test_document_report_returns_the_expected_aggregates(): void
     {
-        $this->asOsmAdmin()
+        $this->asOfficeAdmin()
             ->getJson('/api/reports/documents')
             ->assertOk()
             ->assertJsonStructure(['total', 'by_status', 'by_category', 'by_office', 'by_month']);

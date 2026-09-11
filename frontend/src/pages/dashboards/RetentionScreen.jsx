@@ -3,6 +3,7 @@ import DashboardShell from './DashboardShell';
 import Modal from '../../components/Modal';
 import api from '../../lib/api';
 import './dashboards.css';
+import Banner from '../../components/Banner';
 
 /**
  * Records-retention lifecycle (DR-14). Shows the retention position and
@@ -19,7 +20,7 @@ export default function RetentionScreen() {
   const load = useCallback(async () => {
     setError('');
     try {
-      const res = await api.get('/osm-admin/retention');
+      const res = await api.get('/office-admin/retention');
       setData(res.data);
     } catch (e) {
       setError(e?.response?.data?.message || 'Could not load the retention overview.');
@@ -34,7 +35,7 @@ export default function RetentionScreen() {
     setBusyId(id);
     setError('');
     try {
-      await api.post(`/osm-admin/documents/${id}/${path}`, body);
+      await api.post(`/office-admin/documents/${id}/${path}`, body);
       setDisposing(null);
       setReason('');
       await load();
@@ -55,14 +56,14 @@ export default function RetentionScreen() {
 
   const capNote = (shown, total) =>
     data && total > shown ? (
-      <p className="cell-muted" style={{ marginTop: '0.5rem' }}>
+      <p className="cell-muted u-mt-2">
         Showing the first {shown} of {total}. Clear the earliest ones to see the rest.
       </p>
     ) : null;
 
   return (
-    <DashboardShell eyebrow="OSM admin" title="Records retention">
-      {error && <p className="error-banner">{error}</p>}
+    <DashboardShell eyebrow="Office admin" title="Records retention">
+      {error && <Banner tone="error">{error}</Banner>}
 
       <div className="stat-grid">
         {tiles.map((t) => (
@@ -83,7 +84,7 @@ export default function RetentionScreen() {
             </p>
           </div>
         </div>
-        <div style={{ overflowX: 'auto' }}>
+        <div className="u-scroll-x">
           <table className="data-table">
             <thead>
               <tr>
@@ -142,7 +143,7 @@ export default function RetentionScreen() {
             </p>
           </div>
         </div>
-        <div style={{ overflowX: 'auto' }}>
+        <div className="u-scroll-x">
           <table className="data-table">
             <thead>
               <tr>
@@ -202,7 +203,7 @@ export default function RetentionScreen() {
           onClose={() => setDisposing(null)}
           width={520}
         >
-          <p className="cell-muted" style={{ marginTop: 0 }}>
+          <p className="cell-muted u-mt-0">
             Permanent. The file is deleted; a tombstone record with this reason is kept.
           </p>
           <div className="dash-field">

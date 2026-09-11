@@ -29,7 +29,7 @@ class SubmissionWorkflowTest extends ConformanceTestCase
 
     private function reviewAsOsm(int $id, string $decision, ?string $remarks = null): TestResponse
     {
-        return $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', array_filter([
+        return $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', array_filter([
             'kind' => 'document',
             'id' => $id,
             'decision' => $decision,
@@ -52,11 +52,11 @@ class SubmissionWorkflowTest extends ConformanceTestCase
     public function test_a_reviewer_cannot_review_their_own_submission(): void
     {
         $this->fakeDisks();
-        $id = $this->asOsmAdmin()
-            ->postJson('/api/dashboard/documents', $this->documentPayload(['title' => 'OSM own doc']))
-            ->assertCreated()->json('id');
+        // office_admin cannot use the dashboard endpoint (user-only), so
+        // create the document directly as the office admin user.
+        $doc = $this->createDocument('office.admin@example.test', ['title' => 'Office admin own doc']);
 
-        $this->reviewAsOsm($id, 'approved')->assertStatus(422);
+        $this->reviewAsOsm($doc->id, 'approved')->assertStatus(422);
     }
 
     public function test_disallowed_file_types_and_oversize_files_are_rejected(): void

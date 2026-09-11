@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardShell from './DashboardShell';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import api from '../../lib/api';
 import './dashboards.css';
+import Banner from '../../components/Banner';
 
 const titleCase = (s) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -13,6 +15,7 @@ export default function SystemSettings() {
   const [saving, setSaving] = useState(false);
   const [savingMsg, setSavingMsg] = useState(false);
   const [error, setError] = useState('');
+  const [confirmToggle, setConfirmToggle] = useState(null); // key awaiting confirmation
 
   useEffect(() => {
     api
@@ -25,14 +28,16 @@ export default function SystemSettings() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function toggle(key) {
+  function toggle(key) {
+    // Turning maintenance mode ON is disruptive — confirm first.
     if (key === 'maintenance_mode' && !settings.maintenance_mode) {
-      const ok = window.confirm(
-        'Enable maintenance mode? Everyone except system admins will be blocked from signing in, and non-admin sessions stop working.'
-      );
-      if (!ok) return;
+      setConfirmToggle(key);
+      return;
     }
+    applyToggle(key);
+  }
 
+  async function applyToggle(key) {
     const previous = settings;
     const next = { ...settings, [key]: !settings[key] };
     setSettings(next); // optimistic
@@ -44,6 +49,7 @@ export default function SystemSettings() {
     } catch (err) {
       setSettings(previous); // rollback
       setError(err?.response?.data?.message || 'Could not save that setting.');
+      throw err;
     } finally {
       setSaving(false);
     }
@@ -68,7 +74,7 @@ export default function SystemSettings() {
 
   return (
     <DashboardShell eyebrow="System / super admin" title="System settings">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       {loading || !settings ? (
         <p className="loading-text">Loading settings…</p>
@@ -87,8 +93,8 @@ export default function SystemSettings() {
 
             <div className="toggle-row">
               <div className="toggle-copy">
-                <p style={{ color: 'var(--text-label)' }}>Maintenance mode</p>
-                <span style={{ color: 'var(--text-value)' }}>
+                <p>Maintenance mode</p>
+                <span>
                   Blocks non-admin roles while enabled — new sign-ins and live sessions.
                 </span>
               </div>
@@ -103,7 +109,7 @@ export default function SystemSettings() {
               </label>
             </div>
 
-            <div className="dash-field" style={{ marginTop: '0.75rem' }}>
+            <div className="dash-field u-mt-3">
               <label className="dash-label" htmlFor="maint-msg">
                 Message shown to blocked users
               </label>
@@ -116,7 +122,7 @@ export default function SystemSettings() {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="The system is temporarily under maintenance. Please try again later."
               />
-              <div className="btn-row" style={{ marginTop: '0.5rem' }}>
+              <div className="btn-row u-mt-2">
                 <button
                   className="btn btn--outline btn-sm"
                   disabled={!messageDirty || savingMsg}
@@ -137,8 +143,8 @@ export default function SystemSettings() {
 
             <div className="toggle-row">
               <div className="toggle-copy">
-                <p style={{ color: 'var(--text-label)' }}>Audit logging</p>
-                <span style={{ color: 'var(--text-value)' }}>
+                <p>Audit logging</p>
+                <span>
                   Always on. Every upload, download, review decision, access grant, retention
                   action, AI action, sign-in and settings change is recorded and cannot be
                   disabled (BR-06 / PF-18).
@@ -149,8 +155,8 @@ export default function SystemSettings() {
 
             <div className="toggle-row">
               <div className="toggle-copy">
-                <p style={{ color: 'var(--text-label)' }}>AI agent layer</p>
-                <span style={{ color: 'var(--text-value)' }}>
+                <p>AI agent layer</p>
+                <span>
                   Provider, model, spend cap and confidence threshold are managed on their own
                   screen.
                 </span>
@@ -220,6 +226,16 @@ export default function SystemSettings() {
                 </tbody>
               </table>
             </section>
+          )}
+
+          {confirmToggle === 'maintenance_mode' && (
+            <ConfirmDialog
+              title="Enable maintenance mode?"
+              body="Everyone except system admins will be blocked from signing in, and non-admin sessions stop working immediately."
+              confirmLabel="Enable maintenance mode"
+              onConfirm={() => applyToggle('maintenance_mode')}
+              onClose={() => setConfirmToggle(null)}
+            />
           )}
         </>
       )}

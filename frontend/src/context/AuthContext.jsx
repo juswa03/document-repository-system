@@ -49,8 +49,13 @@ export function AuthProvider({ children }) {
     setStatus('unauthenticated');
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const { data } = await api.get('/me');
+    setUser((prev) => ({ ...prev, ...data }));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, status, login, logout }}>
+    <AuthContext.Provider value={{ user, status, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

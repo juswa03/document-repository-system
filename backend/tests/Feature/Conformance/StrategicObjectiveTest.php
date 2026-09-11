@@ -36,7 +36,7 @@ class StrategicObjectiveTest extends ConformanceTestCase
     public function test_a_system_admin_can_add_an_objective_and_others_cannot(): void
     {
         $this->asUser()->postJson('/api/admin/strategic-objectives', ['code' => 'X1', 'title' => 'x'])->assertForbidden();
-        $this->asOsmAdmin()->postJson('/api/admin/strategic-objectives', ['code' => 'X1', 'title' => 'x'])->assertForbidden();
+        $this->asOfficeAdmin()->postJson('/api/admin/strategic-objectives', ['code' => 'X1', 'title' => 'x'])->assertForbidden();
 
         $this->asSystemAdmin()->postJson('/api/admin/strategic-objectives', [
             'code' => 'G3.4', 'title' => 'Modernise records management', 'parent_id' => StrategicObjective::where('code', 'G3')->value('id'),
@@ -119,35 +119,35 @@ class StrategicObjectiveTest extends ConformanceTestCase
         $doc = $this->createDocument();
         $ids = StrategicObjective::whereIn('code', ['G1.1', 'G3.3'])->pluck('id')->all();
 
-        $this->asOsmAdmin()->putJson("/api/osm-admin/documents/{$doc->id}/objectives", ['objective_ids' => $ids])
+        $this->asOfficeAdmin()->putJson("/api/office-admin/documents/{$doc->id}/objectives", ['objective_ids' => $ids])
             ->assertOk()
             ->assertJsonCount(2);
 
         $this->assertEqualsCanonicalizing(['G1.1', 'G3.3'], $doc->objectives()->pluck('code')->all());
         $this->assertDatabaseHas('audit_logs', ['action' => 'document_objectives_set', 'subject_id' => $doc->id]);
 
-        $this->asOsmAdmin()->putJson("/api/osm-admin/documents/{$doc->id}/objectives", ['objective_ids' => []])
+        $this->asOfficeAdmin()->putJson("/api/office-admin/documents/{$doc->id}/objectives", ['objective_ids' => []])
             ->assertOk()->assertJsonCount(0);
     }
 
     public function test_ordinary_users_cannot_link_objectives(): void
     {
         $doc = $this->createDocument();
-        $this->asUser()->putJson("/api/osm-admin/documents/{$doc->id}/objectives", ['objective_ids' => []])->assertForbidden();
+        $this->asUser()->putJson("/api/office-admin/documents/{$doc->id}/objectives", ['objective_ids' => []])->assertForbidden();
     }
 
     public function test_an_osm_admin_can_read_the_tree_to_pick_from_but_not_edit_it(): void
     {
-        $this->asOsmAdmin()->getJson('/api/osm-admin/strategic-objectives')
+        $this->asOfficeAdmin()->getJson('/api/office-admin/strategic-objectives')
             ->assertOk()->assertJsonStructure(['tree', 'flat']);
 
-        $this->asOsmAdmin()->postJson('/api/admin/strategic-objectives', ['code' => 'Z9', 'title' => 'x'])
+        $this->asOfficeAdmin()->postJson('/api/admin/strategic-objectives', ['code' => 'Z9', 'title' => 'x'])
             ->assertForbidden();
     }
 
     public function test_the_repository_objective_list_is_readable_by_both_admin_roles(): void
     {
-        foreach (['osm.admin@example.test', 'system.admin@example.test'] as $email) {
+        foreach (['office.admin@example.test', 'system.admin@example.test'] as $email) {
             $this->actingAsEmail($email)->getJson('/api/repository/objectives')
                 ->assertOk()
                 ->assertJsonStructure([['id', 'code', 'title']]);
@@ -163,7 +163,7 @@ class StrategicObjectiveTest extends ConformanceTestCase
         $linked->objectives()->attach($g11);
         $unlinked = $this->createDocument();
 
-        $refs = collect($this->asOsmAdmin()->getJson("/api/repository/documents?objective_id={$g11}")->json('data'))
+        $refs = collect($this->asOfficeAdmin()->getJson("/api/repository/documents?objective_id={$g11}")->json('data'))
             ->pluck('ref');
 
         $this->assertContains($linked->tracking_no, $refs);

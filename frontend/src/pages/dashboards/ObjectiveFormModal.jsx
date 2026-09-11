@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Modal from '../../components/Modal';
 import api from '../../lib/api';
+import Banner from '../../components/Banner';
 
 /**
  * Create / edit a strategic objective (Phase 11 API). `parentId` is
@@ -85,7 +86,7 @@ export default function ObjectiveFormModal({ mode, item, parentId, flat, onClose
             maxLength={40}
             placeholder="e.g. G3.4"
           />
-          <p className="cell-muted" style={{ marginTop: '0.3rem' }}>
+          <p className="cell-muted u-mt-1">
             Unique. Matches the numbering in the strategic plan.
           </p>
         </div>
@@ -125,13 +126,13 @@ export default function ObjectiveFormModal({ mode, item, parentId, flat, onClose
         </div>
 
         <div className="dash-field">
-          <label className="dash-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label className="dash-label check-row">
             <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
             Active (available for linking)
           </label>
         </div>
 
-        {error && <p className="error-banner">{error}</p>}
+        {error && <Banner tone="error">{error}</Banner>}
 
         <div className="btn-row">
           <button type="submit" className="btn btn--primary" disabled={saving}>

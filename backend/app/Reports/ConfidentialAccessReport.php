@@ -4,6 +4,7 @@ namespace App\Reports;
 
 use App\Models\AuditLog;
 use App\Models\Document;
+use App\Models\Review;
 use Illuminate\Support\Collection;
 
 /** RPT-09 — access to restricted and confidential documents. */
@@ -46,23 +47,42 @@ class ConfidentialAccessReport extends Report
         $sensitiveIds = Document::whereIn('access_level', ['restricted', 'confidential'])->pluck('id');
         $meta = Document::whereIn('id', $sensitiveIds)->get(['id', 'tracking_no', 'access_level'])->keyBy('id');
 
+        // A reviewer's response file is attached to a Review, not the
+        // document — but retrieving one for a sensitive document is
+        // exactly the access this report exists to surface.
+        $sensitiveReviewIds = Review::whereIn('document_id', $sensitiveIds)
+            ->pluck('document_id', 'id')
+            ->filter();
+
         return AuditLog::query()
-            ->whereIn('action', ['access_granted', 'access_revoked', 'document_downloaded'])
-            ->where('subject_type', Document::class)
-            ->whereIn('subject_id', $sensitiveIds)
+            ->where(fn ($q) => $q
+                ->where(fn ($qq) => $qq
+                    ->whereIn('action', ['access_granted', 'access_revoked', 'document_downloaded'])
+                    ->where('subject_type', Document::class)
+                    ->whereIn('subject_id', $sensitiveIds))
+                ->orWhere(fn ($qq) => $qq
+                    ->where('action', 'review_response_downloaded')
+                    ->where('subject_type', Review::class)
+                    ->whereIn('subject_id', $sensitiveReviewIds->keys())))
             ->with('actor')
             ->when($filters['date_from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($filters['date_to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->orderByDesc('created_at')
             ->get()
-            ->map(fn (AuditLog $l) => [
-                'at' => $l->created_at?->toDateTimeString(),
-                'action' => str_replace('_', ' ', $l->action),
-                'actor' => $l->actor?->full_name ?? 'System',
-                'ref' => $meta[$l->subject_id]?->tracking_no,
-                'access_level' => $meta[$l->subject_id]?->access_level,
-                'detail' => $l->description,
-            ]);
+            ->map(function (AuditLog $l) use ($meta, $sensitiveReviewIds) {
+                $documentId = $l->subject_type === Review::class
+                    ? ($sensitiveReviewIds[$l->subject_id] ?? null)
+                    : $l->subject_id;
+
+                return [
+                    'at' => $l->created_at?->toDateTimeString(),
+                    'action' => str_replace('_', ' ', $l->action),
+                    'actor' => $l->actor?->full_name ?? 'System',
+                    'ref' => $documentId ? $meta[$documentId]?->tracking_no : null,
+                    'access_level' => $documentId ? $meta[$documentId]?->access_level : null,
+                    'detail' => $l->description,
+                ];
+            });
     }
 
     public function summary(array $filters): array

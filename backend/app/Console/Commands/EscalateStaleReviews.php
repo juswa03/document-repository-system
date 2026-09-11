@@ -12,9 +12,9 @@ use Illuminate\Console\Command;
 /**
  * Phase 7.1 / 7.3 — nudge stale reviews. For every pending or in-revision
  * document past its advisory lead-time target (config/lead_times.php),
- * notify the assignee (or, if unassigned, every active OSM admin) and
- * write an audit row. Advisory: nothing is blocked or auto-decided.
- * Scheduled daily in routes/console.php.
+ * notify the assignee (or, if unassigned, the office_admin pool for that
+ * document's target office) and write an audit row. Advisory: nothing is
+ * blocked or auto-decided. Scheduled daily in routes/console.php.
  */
 class EscalateStaleReviews extends Command
 {
@@ -39,11 +39,23 @@ class EscalateStaleReviews extends Command
             return self::SUCCESS;
         }
 
-        $pool = User::where('role', User::ROLE_OSM_ADMIN)->where('is_active', true)->pluck('id');
-
         foreach ($stale as $document) {
-            $recipients = $document->assigned_to ? [$document->assigned_to] : $pool->all();
             $over = Target::daysOverdue($document);
+
+            if ($document->assigned_to) {
+                $recipients = [$document->assigned_to];
+            } else {
+                // Notify the office_admin pool for this document's target
+                // office; fall back to all office_admins if unset.
+                $recipients = User::where('role', User::ROLE_OFFICE_ADMIN)
+                    ->where('is_active', true)
+                    ->when(
+                        $document->target_office_id,
+                        fn ($q) => $q->where('office_id', $document->target_office_id)
+                    )
+                    ->pluck('id')
+                    ->all();
+            }
 
             // In-app + live push only — never emailed, even though
             // "review_pending" is an emailable type elsewhere, so a daily
@@ -52,7 +64,7 @@ class EscalateStaleReviews extends Command
                 $recipients,
                 'review_pending',
                 "Document {$document->tracking_no} is {$over} day(s) past its suggested lead time and still awaiting a decision.",
-                '/osm-admin',
+                '/office-admin',
             );
 
             AuditLog::record(

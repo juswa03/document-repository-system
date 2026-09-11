@@ -19,7 +19,7 @@ class ComplianceReportsTest extends ConformanceTestCase
         $doc = $this->createDocument('user@example.test', $attrs);
         $doc->update(['status' => 'approved']);
         $doc->review()->create([
-            'reviewed_by' => $this->userId('osm.admin@example.test'),
+            'reviewed_by' => $this->userId('office.admin@example.test'),
             'decision' => 'approved',
             'reviewed_at' => now(),
         ]);
@@ -30,7 +30,7 @@ class ComplianceReportsTest extends ConformanceTestCase
     #[Test]
     public function required_documents_crud_is_system_admin_only(): void
     {
-        $this->asOsmAdmin()->getJson('/api/admin/required-documents')->assertForbidden();
+        $this->asOfficeAdmin()->getJson('/api/admin/required-documents')->assertForbidden();
 
         $id = $this->asSystemAdmin()->postJson('/api/admin/required-documents', [
             'name' => 'Annual Strategic Plan',
@@ -55,14 +55,14 @@ class ComplianceReportsTest extends ConformanceTestCase
         ]);
 
         // Nothing submitted yet → every applicable office row is "missing".
-        $before = $this->asOsmAdmin()->getJson('/api/reports/compliance-evidence')->assertOk()->json();
+        $before = $this->asOfficeAdmin()->getJson('/api/reports/compliance-evidence')->assertOk()->json();
         $this->assertGreaterThan(0, $before['summary']['missing']);
         $this->assertSame(0, $before['summary']['evidenced']);
 
         // An approved matching document for the uploader's office closes one.
         $this->approvedDocument(['document_type' => 'minutes', 'category_id' => $categoryId]);
 
-        $after = $this->asOsmAdmin()->getJson('/api/reports/compliance-evidence')->assertOk()->json();
+        $after = $this->asOfficeAdmin()->getJson('/api/reports/compliance-evidence')->assertOk()->json();
         $this->assertSame(1, $after['summary']['evidenced']);
     }
 
@@ -74,7 +74,7 @@ class ComplianceReportsTest extends ConformanceTestCase
             'document_type' => 'plan', 'cadence' => 'annual', 'is_active' => true,
         ]);
 
-        $rows = $this->asOsmAdmin()->getJson('/api/reports/office-submission-compliance')
+        $rows = $this->asOfficeAdmin()->getJson('/api/reports/office-submission-compliance')
             ->assertOk()->json('rows');
 
         $this->assertNotEmpty($rows);
@@ -92,7 +92,7 @@ class ComplianceReportsTest extends ConformanceTestCase
         $stale = $this->createDocument('user@example.test');
         $stale->update(['submitted_at' => now()->subDays(30)]);
 
-        $report = $this->asOsmAdmin()->getJson('/api/reports/document-aging')->assertOk()->json();
+        $report = $this->asOfficeAdmin()->getJson('/api/reports/document-aging')->assertOk()->json();
 
         $rowsByRef = collect($report['rows'])->keyBy('ref');
         $this->assertSame('yes', $rowsByRef[$stale->tracking_no]['overdue']);

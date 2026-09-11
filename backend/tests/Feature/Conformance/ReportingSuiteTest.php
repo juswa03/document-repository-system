@@ -28,7 +28,7 @@ class ReportingSuiteTest extends ConformanceTestCase
 
     public function test_the_available_reports_are_listed(): void
     {
-        $keys = collect($this->asOsmAdmin()->getJson('/api/reports')->assertOk()->json())
+        $keys = collect($this->asOfficeAdmin()->getJson('/api/reports')->assertOk()->json())
             ->pluck('key');
 
         foreach ([
@@ -56,11 +56,11 @@ class ReportingSuiteTest extends ConformanceTestCase
     {
         $this->upload();
 
-        $this->asOsmAdmin()->getJson("/api/reports/{$key}")
+        $this->asOfficeAdmin()->getJson("/api/reports/{$key}")
             ->assertOk()
             ->assertJsonStructure(['key', 'label', 'generated_at', 'columns', 'summary', 'rows']);
 
-        $csv = $this->asOsmAdmin()->get("/api/reports/{$key}?format=csv");
+        $csv = $this->asOfficeAdmin()->get("/api/reports/{$key}?format=csv");
         $csv->assertOk();
         $this->assertStringContainsString('text/csv', $csv->headers->get('content-type'));
     }
@@ -73,12 +73,12 @@ class ReportingSuiteTest extends ConformanceTestCase
 
     public function test_an_unknown_report_is_a_404(): void
     {
-        $this->asOsmAdmin()->getJson('/api/reports/no-such-report')->assertNotFound();
+        $this->asOfficeAdmin()->getJson('/api/reports/no-such-report')->assertNotFound();
     }
 
     public function test_running_a_report_is_audited(): void
     {
-        $this->asOsmAdmin()->getJson('/api/reports/document-inventory')->assertOk();
+        $this->asOfficeAdmin()->getJson('/api/reports/document-inventory')->assertOk();
 
         $this->assertDatabaseHas('audit_logs', ['action' => 'report_generated']);
     }
@@ -87,7 +87,7 @@ class ReportingSuiteTest extends ConformanceTestCase
     {
         $this->upload(['title' => 'Accreditation self-study', 'document_type' => 'evidence']);
 
-        $rows = $this->asOsmAdmin()->getJson('/api/reports/document-inventory')->assertOk()->json('rows');
+        $rows = $this->asOfficeAdmin()->getJson('/api/reports/document-inventory')->assertOk()->json('rows');
         $row = collect($rows)->firstWhere('title', 'Accreditation self-study');
 
         $this->assertNotNull($row);
@@ -100,7 +100,7 @@ class ReportingSuiteTest extends ConformanceTestCase
         $id = $this->upload();
         $this->asUser()->get("/api/documents/{$id}/file")->assertOk();
 
-        $rows = $this->asOsmAdmin()->getJson('/api/reports/retrieval-log')->assertOk()->json('rows');
+        $rows = $this->asOfficeAdmin()->getJson('/api/reports/retrieval-log')->assertOk()->json('rows');
         $this->assertCount(1, $rows);
         $this->assertSame('Juana User', $rows[0]['actor']);
     }
@@ -108,14 +108,14 @@ class ReportingSuiteTest extends ConformanceTestCase
     public function test_version_history_report_lists_superseded_versions(): void
     {
         $id = $this->upload();
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'revision', 'remarks' => 'redo period',
         ])->assertCreated();
         $this->asUser()->postJson("/api/dashboard/documents/{$id}/resubmit", [
             'file' => UploadedFile::fake()->create('v2.pdf', 6, 'application/pdf'),
         ])->assertOk();
 
-        $rows = $this->asOsmAdmin()->getJson('/api/reports/version-history')->assertOk()->json('rows');
+        $rows = $this->asOfficeAdmin()->getJson('/api/reports/version-history')->assertOk()->json('rows');
         $this->assertCount(1, $rows);
         $this->assertSame(1, $rows[0]['version_number']);
         $this->assertSame('redo period', $rows[0]['review_remarks']);
@@ -124,12 +124,12 @@ class ReportingSuiteTest extends ConformanceTestCase
     public function test_confidential_access_report_shows_grant_events(): void
     {
         $doc = $this->createDocument('user@example.test', ['access_level' => 'confidential']);
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/access-grants", [
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/access-grants", [
             'grantee_user_id' => $this->userId('user@example.test'),
             'reason' => 'Audit team',
         ])->assertCreated();
 
-        $rows = $this->asOsmAdmin()->getJson('/api/reports/confidential-access')->assertOk()->json('rows');
+        $rows = $this->asOfficeAdmin()->getJson('/api/reports/confidential-access')->assertOk()->json('rows');
         $this->assertContains('access granted', array_column($rows, 'action'));
     }
 }

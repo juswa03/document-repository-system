@@ -77,7 +77,7 @@ class AuditTrailTest extends ConformanceTestCase
 
         $id = $this->uploadDocument();
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'approved',
             'checklist' => $this->completeChecklist(),
         ])->assertCreated();

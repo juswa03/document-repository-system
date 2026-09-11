@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import ObjectiveFormModal from './ObjectiveFormModal';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import api from '../../lib/api';
 import './dashboards.css';
+import Banner from '../../components/Banner';
 
 /**
  * Manage the strategic-objective tree (Phase 11 / DR objective linkage).
@@ -17,6 +19,7 @@ export default function ManageObjectives() {
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null); // { mode, item?, parentId? }
   const [busyId, setBusyId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null); // node
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,12 +52,6 @@ export default function ManageObjectives() {
   }
 
   async function remove(node) {
-    const warn =
-      node.document_count > 0
-        ? `Delete ${node.code} — ${node.title}?\n${node.document_count} document(s) will be unlinked from it.`
-        : `Delete ${node.code} — ${node.title}?`;
-    if (!window.confirm(warn)) return;
-
     setBusyId(node.id);
     setError('');
     try {
@@ -62,6 +59,7 @@ export default function ManageObjectives() {
       await load();
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not delete that objective.');
+      throw err; // let ConfirmDialog surface it and stay open
     } finally {
       setBusyId(null);
     }
@@ -73,19 +71,19 @@ export default function ManageObjectives() {
     return (
       <>
         <tr>
-          <td className="cell-mono" style={{ paddingLeft: `${0.8 + depth * 1.5}rem` }}>
+          <td className="cell-mono tree-cell" style={{ '--depth': depth }}>
             {depth > 0 && <span className="cell-muted">└ </span>}
             {node.code}
           </td>
           <td>
             {node.title}
             {!node.is_active && (
-              <span className="badge badge--revision" style={{ marginLeft: '0.5rem' }}>
+              <span className="badge badge--revision u-ml-1">
                 inactive
               </span>
             )}
           </td>
-          <td className="cell-muted" style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+          <td className="cell-muted col-right">
             {node.document_count || 0}
           </td>
           <td>
@@ -112,7 +110,7 @@ export default function ManageObjectives() {
               <button
                 className="btn btn--danger-outline btn-sm"
                 disabled={busyId === node.id}
-                onClick={() => remove(node)}
+                onClick={() => setConfirmDelete(node)}
               >
                 Delete
               </button>
@@ -136,31 +134,8 @@ export default function ManageObjectives() {
 
   return (
     <DashboardShell eyebrow="System / super admin" title="Strategic objectives">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
-      <section className="panel">
-        <p className="prose" style={{ maxWidth: '68ch', color: 'var(--text-secondary)' }}>
-          These are the goals and sub-objectives from the OSM strategic plan. During review, each
-          document is linked to the objectives it supports; the repository can then be filtered by
-          objective, and the compliance reports (Objective coverage, RPT-06/07) are built from
-          these links. Set the codes to match the numbering in the plan itself.
-        </p>
-        <p
-          className="prose"
-          style={{
-            maxWidth: '68ch',
-            fontSize: '0.85rem',
-            color: 'var(--text-label)',
-            borderLeft: '2px solid var(--border-light)',
-            paddingLeft: '0.8rem',
-            marginTop: '0.9rem',
-          }}
-        >
-          The tree below is a <strong>placeholder</strong> until the parent objectives document is
-          supplied (decision 0.8). Replace it with the approved goals — nothing else in the system
-          depends on these specific codes.
-        </p>
-      </section>
 
       <div className="stat-grid">
         {tiles.map((t) => (
@@ -191,13 +166,13 @@ export default function ManageObjectives() {
         {loading ? (
           <p className="loading-text">Loading…</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div className="u-scroll-x">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Code</th>
                   <th>Title</th>
-                  <th style={{ textAlign: 'right' }}>Documents</th>
+                  <th className="col-right">Documents</th>
                   <th></th>
                 </tr>
               </thead>
@@ -227,6 +202,20 @@ export default function ManageObjectives() {
           flat={data.flat}
           onClose={() => setModal(null)}
           onSaved={load}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title={`Delete ${confirmDelete.code} — ${confirmDelete.title}?`}
+          body={
+            confirmDelete.document_count > 0
+              ? `${confirmDelete.document_count} document(s) will be unlinked from it, and any sub-objectives re-parent to its parent.`
+              : 'Any sub-objectives re-parent to its parent. This cannot be undone.'
+          }
+          confirmLabel="Delete objective"
+          onConfirm={() => remove(confirmDelete)}
+          onClose={() => setConfirmDelete(null)}
         />
       )}
     </DashboardShell>

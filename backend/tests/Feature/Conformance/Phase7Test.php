@@ -35,7 +35,7 @@ class Phase7Test extends ConformanceTestCase
             'document_id' => $id, 'stage' => DocumentStageEvent::STAGE_UPLOADED,
         ]);
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'approved',
             'checklist' => $this->completeChecklist(),
         ])->assertCreated();
@@ -55,12 +55,12 @@ class Phase7Test extends ConformanceTestCase
         $stale = $this->createDocument('user@example.test');
         $stale->update(['submitted_at' => now()->subDays(20)]);
 
-        $row = collect($this->asOsmAdmin()->getJson('/api/osm-admin/queue')->assertOk()->json('data'))
+        $row = collect($this->asOfficeAdmin()->getJson('/api/office-admin/queue')->assertOk()->json('data'))
             ->firstWhere('id', $stale->id);
         $this->assertTrue($row['overdue']);
         $this->assertSame(config('lead_times.review_days.simple'), $row['target_days']);
 
-        $this->asOsmAdmin()->getJson('/api/osm-admin/stats')
+        $this->asOfficeAdmin()->getJson('/api/office-admin/stats')
             ->assertOk()
             ->assertJsonPath('documents.overdue', 1);
     }
@@ -76,7 +76,7 @@ class Phase7Test extends ConformanceTestCase
 
         $this->assertDatabaseHas('audit_logs', ['action' => 'document_escalated']);
         $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->userId('osm.admin@example.test'),
+            'user_id' => $this->userId('office.admin@example.test'),
             'type' => 'review_pending',
         ]);
     }
@@ -86,7 +86,7 @@ class Phase7Test extends ConformanceTestCase
     #[Test]
     public function a_governance_review_can_be_recorded_and_sets_the_next_due_date(): void
     {
-        $this->asOsmAdmin()->getJson('/api/admin/governance-reviews')->assertForbidden();
+        $this->asOfficeAdmin()->getJson('/api/admin/governance-reviews')->assertForbidden();
 
         $before = $this->asSystemAdmin()->getJson('/api/admin/governance-reviews')->assertOk()->json('status');
         $this->assertTrue(collect($before)->firstWhere('scope', 'retention')['overdue']);

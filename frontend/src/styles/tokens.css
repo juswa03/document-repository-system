@@ -3,6 +3,20 @@
    Imported once from src/index.css. Every CSS custom property the app
    references is defined here; components read these, never raw hex.
 
+   Token groups:
+     Type      --font-*, --text-*, --leading-*
+     Neutrals  --gray-50..900  (one cool-gray family — no warm grays)
+     Accent    --accent / --accent-hover / --accent-soft  (the ONE UI accent)
+     Surfaces  --paper*, --ink*, --line*
+     Spacing   --space-1..8  (4px base — use for structural gaps/padding)
+     Layout    --container, --container-wide
+     Radius    --radius-sm | --radius | --radius-lg | --radius-full
+     Motion    --transition-fast | --transition | --transition-slow | --ease-spring
+     Focus     --focus-ring  (every :focus-visible uses this)
+     Z-index   --z-*  (never hand-pick a z-index in a component)
+     Shadows   --shadow-sm | --shadow-md | --shadow-lg
+     Status    --danger/-soft, --success/-soft, --warning/-soft, --info/-soft
+
    Radius scale is deliberately small:
      --radius-sm  controls (inputs, buttons, badges, chips)
      --radius     cards / panels
@@ -18,6 +32,17 @@
     monospace;
   --font-body: var(--font-sans);
   --font-display: var(--font-sans); /* display weight comes from font-weight */
+
+  /* ---- Type scale — map freehand font-sizes onto these ------------ */
+  --text-2xs: 0.6875rem; /* 11px — badge counters, micro section labels only */
+  --text-xs: 0.75rem;    /* 12px — labels, meta, table headers */
+  --text-sm: 0.875rem;   /* 14px — secondary body, dense UI */
+  --text-base: 1rem;     /* 16px — body */
+  --text-lg: 1.125rem;   /* 18px — modal titles */
+  --text-xl: 1.5rem;     /* 24px — page titles */
+  --text-2xl: 1.9rem;    /* 30px — stat values, form titles */
+  --leading-tight: 1.15;
+  --leading-normal: 1.5;
 
   /* ---- Neutrals — one cool-gray family -------------------------------- */
   --gray-50: #f8fafc;
@@ -37,6 +62,13 @@
   --primary-soft: #e8eef8;    /* focus ring bg, active-nav tint */
   --primary-strong: #1f3f70;  /* structural: sidebar + header */
 
+  /* ---- Accent — the ONE UI accent. Every interactive surface points
+     here so the choice lives in one place. --seal (green) is a STATUS
+     colour (approved / verified), never a UI accent. -------------------- */
+  --accent: var(--primary);
+  --accent-hover: var(--primary-hover);
+  --accent-soft: var(--primary-soft);
+
   /* ---- Surfaces / ink / lines --------------------------------------- */
   --paper: #ffffff;
   --paper-raised: #ffffff;
@@ -46,24 +78,81 @@
   --line: var(--gray-200);
   --line-soft: var(--gray-100);
 
+  /* ---- Spacing — 4px base. Structural gaps / padding / section
+     rhythm read these; typographic micro-gaps may stay literal. ------ */
+  --space-1: 0.25rem;   /*  4px */
+  --space-2: 0.5rem;    /*  8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2rem;      /* 32px */
+  --space-7: 2.5rem;    /* 40px */
+  --space-8: 3.5rem;    /* 56px */
+
+  /* ---- Container widths ------------------------------------------- */
+  --container: 72rem;
+  --container-wide: 96rem;
+
   /* ---- Radius ------------------------------------------------------- */
   --radius-sm: 6px;
   --radius: 10px;
   --radius-lg: 14px;
   --radius-full: 999px;
 
+  /* ---- Motion — one set of durations + one spring ---------------- */
+  --transition-fast: 120ms ease;
+  --transition: 160ms ease;
+  --transition-slow: 240ms ease;
+  --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ---- Focus ring — single definition, used by every interactive
+     element's :focus-visible. ------------------------------------- */
+  --focus-ring: 0 0 0 3px var(--accent-soft);
+  --focus-ring-offset: 2px;
+
+  /* ---- Scrim — the dim behind modals / slide-overs -------------- */
+  --scrim: rgba(15, 23, 42, 0.5);
+
+  /* ---- Skeleton shimmer — loading placeholders ----------------- */
+  --skeleton-base: var(--gray-100);
+  --skeleton-sheen: var(--gray-200);
+
+  /* ---- Z-index scale — never hand-pick a z-index in a component -- */
+  --z-base: 1;
+  --z-dropdown: 50;
+  --z-sticky: 80;
+  --z-modal: 100;
+  --z-toast: 200;
+
   /* ---- Shadows — tinted to slate, not pure black ------------------- */
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.14);
 
-  /* ---- Status ----------------------------------------------------- */
+  /* ---- On-dark — content sitting on --primary-strong (login ink
+     panel, sidebar, page header). White at graded opacities so the
+     dark surfaces don't hand-roll rgba(255,255,255,…) literals. --- */
+  --on-dark: #ffffff;
+  --on-dark-90: rgba(255, 255, 255, 0.9);
+  --on-dark-70: rgba(255, 255, 255, 0.7);
+  --on-dark-55: rgba(255, 255, 255, 0.55);
+  --on-dark-line: rgba(255, 255, 255, 0.2);
+  --on-dark-hover: rgba(255, 255, 255, 0.5);
+  --on-dark-fill: rgba(255, 255, 255, 0.08);
+  --on-dark-fill-hover: rgba(255, 255, 255, 0.16);
+
+  /* ---- Status — one value per status. These are the ONLY status
+     colours; component CSS must not define its own. Each pair is a
+     saturated ink + a tint background for badges / notices / banners. */
   --danger: #c0362c;
+  --danger-hover: #9c2b22;
   --danger-soft: #fdecea;
   --success: #1f7a44;
   --success-soft: #e6f4ec;
   --warning: #b26b00;
   --warning-soft: #fbf0dd;
+  --info: #1f3f70;
+  --info-soft: #e8eef8;
   --seal: var(--success);
   --seal-deep: #155e34;
 
@@ -94,8 +183,10 @@
 .login-panel--ink {
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.82);
-  --text-muted: rgba(255, 255, 255, 0.60);
-  --text-label: rgba(255, 255, 255, 0.72);
+  /* 0.7 is the floor that still clears 4.5:1 on --primary-strong for the
+     small tracked labels this maps to. */
+  --text-muted: rgba(255, 255, 255, 0.7);
+  --text-label: rgba(255, 255, 255, 0.75);
   --line: rgba(255, 255, 255, 0.14);
   --border: rgba(255, 255, 255, 0.14);
   --ink: #ffffff;

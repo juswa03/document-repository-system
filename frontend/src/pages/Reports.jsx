@@ -13,6 +13,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
+import Banner from '../components/Banner';
 import DashboardShell from './dashboards/DashboardShell';
 import ReportRunner from '../components/ReportRunner';
 import api from '../lib/api';
@@ -73,12 +74,12 @@ export default function Reports() {
 
   return (
     <DashboardShell eyebrow="Reports" title="Repository reporting">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <ReportRunner />
 
-      <h2 className="panel-title" style={{ margin: '2rem 0 0.75rem' }}>Overview</h2>
-      <p className="panel-subtitle" style={{ marginBottom: '1rem' }}>
+      <h2 className="panel-title section-title">Overview</h2>
+      <p className="panel-subtitle u-mb-4">
         Document volume, type &amp; status at a glance.
       </p>
 
@@ -98,7 +99,7 @@ export default function Reports() {
         {loading || !report ? (
           <p className="loading-text">Loading report…</p>
         ) : (
-          <div className="stat-grid" style={{ marginBottom: 0 }}>
+          <div className="stat-grid u-mb-0">
             <div className="stat-card">
               <div className="stat-value">{report.total}</div>
               <div className="stat-label">Total documents</div>
@@ -115,7 +116,7 @@ export default function Reports() {
 
       {!loading && report && (
         <>
-          <div className="chart-grid" style={{ marginBottom: '1.5rem' }}>
+          <div className="chart-grid u-mb-5">
             <section className="panel chart-panel">
               <div className="panel-header">
                 <div>

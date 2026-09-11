@@ -4,10 +4,12 @@ import UserFormModal from './UserFormModal';
 import Pager from '../../components/Pager';
 import api from '../../lib/api';
 import './dashboards.css';
+import Banner from '../../components/Banner';
+import { TableSkeleton } from '../../components/Skeleton';
 
 const ROLE_LABELS = {
   system_admin: 'System admin',
-  osm_admin: 'OSM admin',
+  office_admin: 'Office admin',
   user: 'User / office',
 };
 
@@ -76,7 +78,7 @@ export default function ManageUsers() {
 
   return (
     <DashboardShell eyebrow="System / super admin" title="Manage users">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <section className="panel">
         <div className="panel-header">
@@ -91,7 +93,7 @@ export default function ManageUsers() {
 
         <form className="filter-bar" onSubmit={(e) => e.preventDefault()}>
           <div className="filter-field filter-field--grow">
-            <label htmlFor="f-q" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="f-q">
               Search
             </label>
             <input
@@ -104,7 +106,7 @@ export default function ManageUsers() {
           </div>
 
           <div className="filter-field">
-            <label htmlFor="f-role" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="f-role">
               Role
             </label>
             <select id="f-role" value={filters.role} onChange={(e) => setFilter('role', e.target.value)}>
@@ -118,7 +120,7 @@ export default function ManageUsers() {
           </div>
 
           <div className="filter-field">
-            <label htmlFor="f-status" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="f-status">
               Status
             </label>
             <select id="f-status" value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
@@ -145,7 +147,7 @@ export default function ManageUsers() {
         </form>
 
         {loading ? (
-          <p className="loading-text">Loading users…</p>
+          <TableSkeleton rows={6} label="Loading users" />
         ) : (
           <table className="data-table">
             <thead>

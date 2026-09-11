@@ -42,7 +42,7 @@ export default function ResetPassword() {
   if (!token) {
     return (
       <AuthLayout eyebrow="REC · reset" title="Invalid reset link">
-        <p className="auth-error">
+        <p className="banner banner--error">
           This link is missing its reset token. Request a new one from the sign-in page.
         </p>
         <Link to="/forgot-password" className="auth-link">Request a new link</Link>
@@ -53,8 +53,11 @@ export default function ResetPassword() {
   if (done) {
     return (
       <AuthLayout eyebrow="REC · reset" title="Password updated">
-        <p className="auth-success">Your password has been changed. You can now sign in.</p>
-        <button className="auth-submit" onClick={() => navigate('/login', { replace: true })}>
+        <p className="banner banner--success">Your password has been changed. You can now sign in.</p>
+        <button
+          className="btn btn--primary btn--lg btn--block"
+          onClick={() => navigate('/login', { replace: true })}
+        >
           Go to sign in
         </button>
       </AuthLayout>
@@ -99,8 +102,12 @@ export default function ResetPassword() {
             minLength={8}
           />
         </div>
-        {error && <p className="auth-error">{error}</p>}
-        <button type="submit" className="auth-submit" disabled={saving}>
+        {error && <p className="banner banner--error" role="alert">{error}</p>}
+        <button
+          type="submit"
+          className="btn btn--primary btn--lg btn--block"
+          disabled={saving}
+        >
           {saving ? 'Saving…' : 'Reset password'}
         </button>
       </form>

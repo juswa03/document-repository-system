@@ -47,7 +47,7 @@ class AccessControlTest extends ConformanceTestCase
     {
         $doc = $this->doc('restricted');
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/access-grants", [
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/access-grants", [
             'grantee_user_id' => $this->other->id,
             'reason' => 'Working group member.',
         ])->assertCreated();
@@ -59,7 +59,7 @@ class AccessControlTest extends ConformanceTestCase
     {
         $doc = $this->doc('restricted');
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/access-grants", [
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/access-grants", [
             'grantee_office_id' => $this->other->office_id,
             'reason' => 'Whole office needs it.',
         ])->assertCreated();
@@ -71,12 +71,12 @@ class AccessControlTest extends ConformanceTestCase
     {
         $doc = $this->doc('restricted');
         $grant = $doc->accessGrants()->create([
-            'grantee_user_id' => $this->other->id, 'granted_by' => $this->userId('osm.admin@example.test'),
+            'grantee_user_id' => $this->other->id, 'granted_by' => $this->userId('office.admin@example.test'),
             'reason' => 'temp',
         ]);
         $this->actingAsEmail('other@example.test')->get("/api/documents/{$doc->id}/file")->assertOk();
 
-        $this->asOsmAdmin()->deleteJson("/api/osm-admin/access-grants/{$grant->id}")->assertOk();
+        $this->asOfficeAdmin()->deleteJson("/api/office-admin/access-grants/{$grant->id}")->assertOk();
         $this->actingAsEmail('other@example.test')->get("/api/documents/{$doc->id}/file")->assertForbidden();
 
         $grant->update(['revoked_at' => null, 'expires_at' => now()->subDay()]);
@@ -87,7 +87,7 @@ class AccessControlTest extends ConformanceTestCase
     {
         $doc = $this->doc('confidential');
 
-        $grant = $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/access-grants", [
+        $grant = $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/access-grants", [
             'grantee_user_id' => $this->other->id, 'reason' => 'Audit review.',
         ])->assertCreated()->json();
 
@@ -97,21 +97,21 @@ class AccessControlTest extends ConformanceTestCase
     public function test_grants_are_rejected_on_public_or_internal_documents(): void
     {
         $doc = $this->doc('internal');
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/access-grants", [
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/access-grants", [
             'grantee_user_id' => $this->other->id, 'reason' => 'n/a',
         ])->assertStatus(422);
     }
 
     public function test_the_osm_grantee_picker_list_is_reachable_by_an_osm_admin_only(): void
     {
-        $rows = $this->asOsmAdmin()->getJson('/api/osm-admin/users')
+        $rows = $this->asOfficeAdmin()->getJson('/api/office-admin/users')
             ->assertOk()
             ->assertJsonStructure([['id', 'full_name']])
             ->json();
 
         $this->assertContains('other@example.test', User::whereIn('id', array_column($rows, 'id'))->pluck('email')->all());
 
-        $this->asUser()->getJson('/api/osm-admin/users')->assertForbidden();
+        $this->asUser()->getJson('/api/office-admin/users')->assertForbidden();
     }
 
     public function test_repository_search_hides_documents_the_caller_cannot_see(): void
@@ -121,7 +121,7 @@ class AccessControlTest extends ConformanceTestCase
 
         // osm_admin sees everything
         $adminTitles = array_column(
-            $this->asOsmAdmin()->getJson('/api/repository/documents')->json('data'), 'title'
+            $this->asOfficeAdmin()->getJson('/api/repository/documents')->json('data'), 'title'
         );
         $this->assertContains('A restricted file', $adminTitles);
 
@@ -139,7 +139,7 @@ class AccessControlTest extends ConformanceTestCase
             ->postJson('/api/dashboard/documents', $this->documentPayload(['access_level' => 'internal']))
             ->assertCreated()->json('id');
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'approved', 'access_level' => 'confidential',
             'checklist' => $this->completeChecklist(),
         ])->assertCreated();

@@ -80,6 +80,6 @@ class FileStorageTest extends ConformanceTestCase
         $doc = $this->createDocument('user@example.test');
 
         $this->asUser()->get("/api/documents/{$doc->id}/file")->assertOk();
-        $this->asOsmAdmin()->get("/api/documents/{$doc->id}/file")->assertOk();
+        $this->asOfficeAdmin()->get("/api/documents/{$doc->id}/file")->assertOk();
     }
 }

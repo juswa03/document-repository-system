@@ -17,7 +17,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card-bg);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   color: var(--text-value);
 }
 
@@ -27,9 +27,9 @@
 }
 
 .ov-alert--warn {
-  border-color: #e6c88a;
-  background: #fdf7ec;
-  color: #8a5a1c;
+  border-color: var(--warning);
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
 .ov-alert a {
@@ -61,7 +61,7 @@
   gap: 1rem;
   padding: 0.7rem 0;
   border-bottom: 1px solid var(--border-light);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
 }
 
 .ov-list-row:last-child {
@@ -74,7 +74,7 @@
 
 .ov-list-sub {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   margin-top: 0.15rem;
 }
@@ -97,7 +97,7 @@
 }
 
 .ov-panel-links a {
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--primary);
   text-decoration: none;
@@ -122,14 +122,14 @@
   border-radius: var(--radius);
   color: var(--text-value);
   text-decoration: none;
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .ov-quick a:hover {
   box-shadow: var(--shadow-sm);
-  border-color: var(--primary);
+  border-color: var(--accent);
 }
 
 .ov-quick svg {

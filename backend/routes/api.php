@@ -17,10 +17,12 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentObjectiveController;
 use App\Http\Controllers\Api\DocumentRepositoryController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RetentionController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SubmissionController;
+use App\Http\Controllers\Api\SubmissionPreflightController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Models\Category;
@@ -39,11 +41,34 @@ Route::middleware('throttle:auth')->group(function () {
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('/logout', [LoginController::class, 'logout']);
     Route::get('/me', [LoginController::class, 'me']);
+    Route::patch('/profile', [ProfileController::class, 'update']);
+
+    // Profile picture. Stored on the private disk and streamed back
+    // through an authenticated route — never a public URL.
+    Route::post('/profile/avatar', [ProfileController::class, 'storeAvatar']);
+    Route::delete('/profile/avatar', [ProfileController::class, 'destroyAvatar']);
+    Route::get('/users/{user}/avatar', [ProfileController::class, 'showAvatar']);
 
     // Lookup data for dropdowns — any authenticated role can read these.
     // Lookups for dropdowns — active only, unless ?all=1 (admin screens).
+    // Ordered quickest-turnaround-first (display_order) so the request
+    // form reads as an escalating list; carries each type's published
+    // lead time and examples so the interface never hard-codes them.
     Route::get('/request-types', fn () => response()->json(
-        RequestType::unless(request()->boolean('all'), fn ($q) => $q->active())->orderBy('type_name')->get()
+        RequestType::unless(request()->boolean('all'), fn ($q) => $q->active())
+            ->ordered()
+            ->get()
+            ->map(fn (RequestType $t) => [
+                'id' => $t->id,
+                'type_name' => $t->type_name,
+                'type_code' => $t->type_code,
+                'examples' => $t->examples,
+                'lead_min_days' => $t->lead_min_days,
+                'lead_max_days' => $t->lead_max_days,
+                'lead_time_label' => $t->leadTimeLabel(),
+                'requires_justification' => $t->requires_justification,
+                'is_active' => $t->is_active,
+            ])
     ));
     Route::get('/categories', fn () => response()->json(
         Category::unless(request()->boolean('all'), fn ($q) => $q->active())->orderBy('category_name')->get()
@@ -51,6 +76,17 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/offices', fn () => response()->json(
         Office::unless(request()->boolean('all'), fn ($q) => $q->active())->orderBy('office_name')->get()
     ));
+
+    // Published lead-time targets (decision 0.9) — read-only, so a screen
+    // can tell a user what turnaround to expect instead of hard-coding it.
+    // Advisory: these are targets, not guarantees, hence `depends_on`.
+    Route::get('/lead-times', fn () => response()->json([
+        'unit' => 'working_days',
+        'activities' => collect(config('lead_times.activities'))
+            ->map(fn (array $a, string $key) => ['key' => $key] + $a)
+            ->values(),
+        'depends_on' => config('lead_times.depends_on'),
+    ]));
 
     // Notifications — any authenticated user reads/marks their own.
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -62,6 +98,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // not a fixed role.
     Route::get('/documents/{id}/file', [DocumentController::class, 'download']);
     Route::get('/documents/{id}/versions', [DocumentController::class, 'versions']);
+
+    // Review response file — submitter-only download of the file an
+    // office admin attached when approving their submission.
+    Route::get('/reviews/{review}/response-file', [ReviewController::class, 'downloadResponseFile']);
 
     // System admin — user management.
     Route::middleware('role:system_admin')->prefix('admin')->group(function () {
@@ -107,9 +147,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::delete('/strategic-objectives/{strategicObjective}', [StrategicObjectiveController::class, 'destroy']);
     });
 
-    // Document repository search (objective 1.3) — cross-office, so
-    // both admin roles can browse it, unlike the user's own submissions.
-    Route::middleware('role:osm_admin,system_admin')->prefix('repository')->group(function () {
+    // Document repository search (objective 1.3) — office_admin sees own
+    // office only (enforced in Document::scopeAccessibleBy); system_admin sees all.
+    Route::middleware('role:office_admin,system_admin')->prefix('repository')->group(function () {
         Route::get('/documents', [DocumentRepositoryController::class, 'index']);
         Route::post('/search', [DocumentRepositoryController::class, 'search']);
         // Active strategic objectives for the repository's objective filter
@@ -119,19 +159,23 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         ));
     });
 
-    // Reports (objective 1.4 / §G) — same audience as the repository search.
-    Route::middleware('role:osm_admin,system_admin')->prefix('reports')->group(function () {
+    // Reports (objective 1.4 / §G) — office_admin gets their office scoped automatically.
+    Route::middleware('role:office_admin,system_admin')->prefix('reports')->group(function () {
         Route::get('/', [ReportController::class, 'index']);
         Route::get('/documents', [ReportController::class, 'documents']);   // legacy dashboard aggregate
         Route::get('/{report}', [ReportController::class, 'show']);
         Route::post('/{report}/narrative', [ReportController::class, 'narrative']);
     });
 
-    // OSM admin — review queue + decisions + access grants.
-    Route::middleware('role:osm_admin')->prefix('osm-admin')->group(function () {
+    // Office admin — review queue + decisions + access grants (scoped to their office).
+    Route::middleware('role:office_admin')->prefix('office-admin')->group(function () {
         Route::get('/queue', [SubmissionController::class, 'queue']);
+        Route::get('/decided', [SubmissionController::class, 'decided']);
         Route::get('/stats', [SubmissionController::class, 'stats']);
         Route::get('/review-config', [SubmissionController::class, 'reviewConfig']);
+        // Repository documents a reviewer may hand over as the answer,
+        // instead of uploading a fresh copy.
+        Route::get('/response-documents', [SubmissionController::class, 'responseDocuments']);
         Route::post('/reviews', [ReviewController::class, 'store']);
 
         // Review routing & assignment (PF-08) — claim / reassign / release.
@@ -167,10 +211,19 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('/documents/{document}/dispose', [RetentionController::class, 'dispose']);
     });
 
-    // User / office — submit and track. OSM admins can also submit
-    // (objective 2.1 requires both roles to be able to upload).
-    Route::middleware('role:user,osm_admin')->prefix('dashboard')->group(function () {
+    // User / office — submit and track own submissions.
+    Route::middleware('role:user')->prefix('dashboard')->group(function () {
         Route::get('/submissions', [SubmissionController::class, 'mine']);
+        // Steps 5 & 6 — duplicate/version check and AI suggestions shown
+        // to the uploader BEFORE they submit, so they confirm or override.
+        Route::post('/documents/preflight', SubmissionPreflightController::class);
+
+        // Draft — encoded but not yet submitted. Invisible to reviewers
+        // until submit promotes it into the queue.
+        Route::post('/documents/draft', [SubmissionController::class, 'storeDraft']);
+        Route::post('/documents/{id}/draft', [SubmissionController::class, 'storeDraft']);
+        Route::post('/documents/{id}/submit', [SubmissionController::class, 'submitDraft']);
+        Route::delete('/documents/{id}/draft', [SubmissionController::class, 'destroyDraft']);
         Route::post('/requests', [SubmissionController::class, 'storeRequest']);
         Route::post('/documents', [SubmissionController::class, 'storeDocument']);
         Route::post('/requests/{id}/resubmit', [SubmissionController::class, 'resubmitRequest']);

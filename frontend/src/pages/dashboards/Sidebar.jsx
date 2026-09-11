@@ -11,17 +11,24 @@ import {
   Target,
   Sparkles,
   ScrollText,
-  FileText,
+  ClipboardList,
+  FilePen,
+  Clock,
+  AlertTriangle,
+  XCircle,
+  CheckCircle,
+  UserCog,
   ChevronLeft,
   ChevronRight,
   LogOut,
 } from 'lucide-react';
+import Avatar from '../../components/Avatar';
 import { useAuth } from '../../context/AuthContext';
 import './Sidebar.css';
 
 const ROLE_LABELS = {
   system_admin: 'System admin',
-  osm_admin: 'OSM admin',
+  office_admin: 'Office admin',
   user: 'User / office',
 };
 
@@ -35,7 +42,9 @@ const NAV_BY_ROLE = {
         { icon: ShieldCheck, label: 'Manage roles', to: '/admin/roles' },
         { icon: Settings, label: 'System settings', to: '/admin/settings' },
         { icon: Sparkles, label: 'AI settings', to: '/admin/ai-settings' },
-        { icon: Tags, label: 'Categories & offices', to: '/admin/lookups' },
+        { icon: Archive, label: 'Offices', to: '/admin/offices' },
+        { icon: Tags, label: 'Categories', to: '/admin/categories' },
+        { icon: ClipboardList, label: 'Request types', to: '/admin/request-types' },
         { icon: ListChecks, label: 'Required documents', to: '/admin/required-documents' },
         { icon: Target, label: 'Strategic objectives', to: '/admin/objectives' },
         { icon: ShieldCheck, label: 'Governance', to: '/admin/governance' },
@@ -50,27 +59,43 @@ const NAV_BY_ROLE = {
       ],
     },
   ],
-  osm_admin: [
+  office_admin: [
     {
       group: 'Review',
       items: [
-        { icon: ListChecks, label: 'Review queue', to: '/osm-admin' },
-        { icon: FileText, label: 'My submissions', to: '/dashboard' },
+        { icon: LayoutDashboard, label: 'Overview', to: '/office-admin' },
+        { icon: ListChecks, label: 'Review queue', to: '/office-admin/queue' },
+        { icon: CheckCircle, label: 'Decided submissions', to: '/office-admin/decided' },
       ],
     },
     {
       group: 'Records',
       items: [
         { icon: Archive, label: 'Document repository', to: '/repository' },
-        { icon: Archive, label: 'Retention', to: '/osm-admin/retention' },
+        { icon: Archive, label: 'Retention', to: '/office-admin/retention' },
         { icon: BarChart3, label: 'Reports', to: '/reports' },
       ],
+    },
+    {
+      group: 'Account',
+      items: [{ icon: UserCog, label: 'Manage profile', to: '/profile' }],
     },
   ],
   user: [
     {
-      group: 'Records',
-      items: [{ icon: FileText, label: 'My submissions', to: '/dashboard' }],
+      group: 'My records',
+      items: [
+        { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
+        { icon: FilePen, label: 'Drafts', to: '/dashboard/drafts' },
+        { icon: Clock, label: 'Pending submissions', to: '/dashboard/pending' },
+        { icon: AlertTriangle, label: 'Needs revision', to: '/dashboard/revision' },
+        { icon: XCircle, label: 'Rejected', to: '/dashboard/rejected' },
+        { icon: CheckCircle, label: 'Approved', to: '/dashboard/approved' },
+      ],
+    },
+    {
+      group: 'Account',
+      items: [{ icon: UserCog, label: 'Manage profile', to: '/profile' }],
     },
   ],
 };
@@ -94,7 +119,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           <p className="sidebar-brand-name">Records &amp; Approvals</p>
         </div>
         <button
-          className="sidebar-toggle"
+          className="icon-btn sidebar-toggle"
           onClick={onToggle}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -135,8 +160,13 @@ export default function Sidebar({ collapsed, onToggle }) {
       </nav>
 
       <div className="sidebar-footer">
-        <p className="sidebar-user-name">{user?.name}</p>
-        <p className="sidebar-user-role">{ROLE_LABELS[user?.role] || user?.role}</p>
+        <div className="sidebar-identity">
+          <Avatar name={user?.name} src={user?.avatar_url} size={34} />
+          <div className="sidebar-identity-text">
+            <p className="sidebar-user-name">{user?.name}</p>
+            <p className="sidebar-user-role">{ROLE_LABELS[user?.role] || user?.role}</p>
+          </div>
+        </div>
         <button className="sidebar-signout" onClick={handleLogout} title="Sign out">
           <LogOut size={16} strokeWidth={2} />
           <span className="sidebar-signout-label">Sign out</span>

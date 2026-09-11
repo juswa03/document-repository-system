@@ -27,10 +27,10 @@ final class RoleMatrix
                 'name' => 'User / office',
                 'description' => 'Submits documents or requests and tracks the status of their own submissions.',
             ],
-            User::ROLE_OSM_ADMIN => [
-                'name' => 'OSM admin',
-                'description' => 'The whole OSM review-and-publish function — completeness check, classification, '
-                    .'return / reject / approve, access grants, retention and disposal, plus repository search and reports.',
+            User::ROLE_OFFICE_ADMIN => [
+                'name' => 'Office admin',
+                'description' => 'Reviews submissions targeted at their office — completeness check, classification, '
+                    .'return / reject / approve, access grants, retention and disposal, plus their office\'s repository and reports.',
             ],
             User::ROLE_SYSTEM_ADMIN => [
                 'name' => 'System admin',
@@ -95,7 +95,7 @@ final class RoleMatrix
 
         return [
             User::ROLE_USER => $submit,
-            User::ROLE_OSM_ADMIN => [...$submit, ...$review, ...$shared],
+            User::ROLE_OFFICE_ADMIN => [...$submit, ...$review, ...$shared],
             User::ROLE_SYSTEM_ADMIN => [...$shared, ...$platform],
         ];
     }

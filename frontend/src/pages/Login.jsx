@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Banner from '../components/Banner';
+import bipsuLogo from '../assets/bipsu-logo.png';
 import './Login.css';
 
 function referenceCode() {
@@ -56,38 +58,12 @@ export default function Login() {
           </p>
 
           <div className="stamp" role="presentation">
-            <svg viewBox="0 0 120 120" className="stamp-svg">
-              <circle cx="60" cy="60" r="52" className="stamp-ring" />
-              <circle cx="60" cy="60" r="44" className="stamp-ring-inner" />
-              <text className="stamp-text-arc" textAnchor="middle">
-                <textPath href="#stamp-arc-top" startOffset="50%">
-                  ACCESS
-                </textPath>
-              </text>
-              <path
-                id="stamp-arc-top"
-                d="M 14 60 A 46 46 0 0 1 106 60"
-                fill="none"
-              />
-              <text x="60" y="67" textAnchor="middle" className="stamp-word">
-                VERIFIED
-              </text>
-              <text className="stamp-text-arc" textAnchor="middle">
-                <textPath href="#stamp-arc-bottom" startOffset="50%">
-                  SECURE SIGN-IN
-                </textPath>
-              </text>
-              <path
-                id="stamp-arc-bottom"
-                d="M 106 60 A 46 46 0 0 1 14 60"
-                fill="none"
-              />
-            </svg>
+            <img src={bipsuLogo} alt="" className="stamp-seal" />
           </div>
         </div>
 
         <p className="ink-footer">
-          System &amp; OSM admins, and office users, all sign in here — you're
+          System &amp; Office admins, and office users, all sign in here — you're
           routed to your dashboard by role.
         </p>
       </section>
@@ -100,7 +76,14 @@ export default function Login() {
 
       <section className="login-panel login-panel--paper">
         <form className="login-form" onSubmit={handleSubmit} noValidate>
-          <p className="form-eyebrow">Sign in</p>
+          <div className="form-brand">
+            <img
+              src={bipsuLogo}
+              alt="Biliran Province State University seal"
+              className="form-brand-seal"
+            />
+            <p className="form-eyebrow">Sign in</p>
+          </div>
           <h2 className="form-title">Welcome back</h2>
 
           <div className="field">
@@ -142,13 +125,13 @@ export default function Login() {
             </div>
           </div>
 
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
+          {error && <Banner tone="error">{error}</Banner>}
 
-          <button type="submit" className="submit-btn" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn--primary btn--lg btn--block"
+            disabled={loading}
+          >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
 

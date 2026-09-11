@@ -21,10 +21,10 @@ class User extends Authenticatable
      * Keep this list in sync with the `role` enum in the users migration.
      */
     public const ROLE_SYSTEM_ADMIN = 'system_admin';
-    public const ROLE_OSM_ADMIN = 'osm_admin';
+    public const ROLE_OFFICE_ADMIN = 'office_admin';
     public const ROLE_USER = 'user';
 
-    public const ROLES = [self::ROLE_USER, self::ROLE_OSM_ADMIN, self::ROLE_SYSTEM_ADMIN];
+    public const ROLES = [self::ROLE_USER, self::ROLE_OFFICE_ADMIN, self::ROLE_SYSTEM_ADMIN];
 
     protected $fillable = [
         'full_name',
@@ -32,6 +32,7 @@ class User extends Authenticatable
         'password',
         'role',
         'office_id',
+        'avatar_path',
         'is_active',
     ];
 
@@ -71,9 +72,23 @@ class User extends Authenticatable
     {
         return match ($this->role) {
             self::ROLE_SYSTEM_ADMIN => '/admin',
-            self::ROLE_OSM_ADMIN => '/osm-admin',
+            self::ROLE_OFFICE_ADMIN => '/office-admin',
             default => '/dashboard',
         };
+    }
+
+    /**
+     * Where the frontend fetches this user's profile picture, or null
+     * when they have none and the interface should fall back to initials.
+     *
+     * A relative API path rather than an absolute URL: avatars live on
+     * the private disk and are streamed through an authenticated route,
+     * so the client fetches this with its bearer token like any other
+     * endpoint.
+     */
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path ? "/users/{$this->id}/avatar" : null;
     }
 
     public function office(): BelongsTo

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Modal from '../../components/Modal';
 import api from '../../lib/api';
+import Banner from '../../components/Banner';
 
 export default function LookupFormModal({ config, mode, item, onClose, onSaved }) {
   const isEdit = mode === 'edit';
@@ -57,12 +58,12 @@ export default function LookupFormModal({ config, mode, item, onClose, onSaved }
             required
             maxLength={20}
           />
-          <p className="cell-muted" style={{ marginTop: '0.3rem' }}>
+          <p className="cell-muted u-mt-1">
             Short, unique — used in tracking numbers (e.g. FIN, HQ).
           </p>
         </div>
 
-        {error && <p className="error-banner">{error}</p>}
+        {error && <Banner tone="error">{error}</Banner>}
 
         <div className="btn-row">
           <button type="submit" className="btn btn--primary" disabled={saving}>

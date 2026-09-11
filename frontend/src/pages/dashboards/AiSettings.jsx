@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import api from '../../lib/api';
 import './dashboards.css';
+import Banner from '../../components/Banner';
 
 /**
  * §F / AI-09 — admin control of the AI agent layer: on/off, provider,
@@ -129,27 +130,24 @@ export default function AiSettings() {
 
   return (
     <DashboardShell eyebrow="System / super admin" title="AI settings">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       {loading || !form ? (
         <p className="loading-text">Loading…</p>
       ) : (
         <>
           <section className="panel">
-            <p className="prose" style={{ maxWidth: '68ch', color: 'var(--text-secondary)' }}>
+            <p className="prose">
               The AI layer reviews each submitted document and produces <em>suggestions</em> —
               category, completeness, metadata clean-up, access level, a summary and a
               near-duplicate check. Nothing is applied to a document until a reviewer accepts it.
               It stays completely inert until it is switched on <strong>and</strong> an API key is
               present in the server environment.
             </p>
-            <div
-              className="toggle-row"
-              style={{ marginTop: '1rem', borderTop: '1px solid var(--border, #e2e8f0)', paddingTop: '1rem' }}
-            >
+            <div className="toggle-row ai-status-row">
               <div className="toggle-copy">
-                <p style={{ color: 'var(--text-label)' }}>AI analysis</p>
-                <span style={{ color: 'var(--text-value)' }}>{statusText}</span>
+                <p>AI analysis</p>
+                <span>{statusText}</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -219,12 +217,12 @@ export default function AiSettings() {
               </select>
             </div>
 
-            <div className="btn-row" style={{ marginTop: '0.6rem' }}>
+            <div className="btn-row u-mt-2">
               <button className="btn btn--outline btn-sm" disabled={testing} onClick={test}>
                 {testing ? 'Testing…' : 'Test connection'}
               </button>
               {testResult && (
-                <span className={testResult.ok ? 'cell-muted' : 'error-banner'} style={{ margin: 0 }}>
+                <span className={testResult.ok ? 'cell-muted u-my-0' : 'banner banner--error u-my-0'}>
                   {testResult.ok ? '✓ ' : '✕ '}
                   {testResult.message}
                 </span>
@@ -271,7 +269,7 @@ export default function AiSettings() {
                 value={form.ai_confidence_threshold}
                 onChange={(e) => set('ai_confidence_threshold', e.target.value)}
               />
-              <p className="cell-muted" style={{ marginTop: '0.3rem' }}>
+              <p className="cell-muted u-mt-1">
                 Suggestions below this confidence are still stored but flagged as low-confidence.
               </p>
             </div>
@@ -291,8 +289,8 @@ export default function AiSettings() {
             {(data.ai_capability_options || []).map((opt) => (
               <div className="toggle-row" key={opt.key}>
                 <div className="toggle-copy">
-                  <p style={{ color: 'var(--text-label)' }}>{opt.label}</p>
-                  <span className="cell-mono" style={{ color: 'var(--text-value)' }}>
+                  <p>{opt.label}</p>
+                  <span className="cell-mono">
                     {opt.key}
                   </span>
                 </div>

@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Document;
 use App\Models\User;
 use Database\Seeders\LookupDataSeeder;
+use Database\Seeders\OfficeSeeder;
 use Database\Seeders\RoleUserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +39,7 @@ abstract class ConformanceTestCase extends TestCase
 
         $this->seed([
             LookupDataSeeder::class,
+            OfficeSeeder::class,
             RoleUserSeeder::class,
         ]);
     }
@@ -61,9 +63,9 @@ abstract class ConformanceTestCase extends TestCase
         return $this->actingAsEmail('user@example.test');
     }
 
-    protected function asOsmAdmin(): static
+    protected function asOfficeAdmin(): static
     {
-        return $this->actingAsEmail('osm.admin@example.test');
+        return $this->actingAsEmail('office.admin@example.test');
     }
 
     protected function asSystemAdmin(): static
@@ -88,7 +90,7 @@ abstract class ConformanceTestCase extends TestCase
 
     /**
      * Every completeness-checklist item for a kind confirmed (Phase 4.3 /
-     * PF-09). Spread into a POST /api/osm-admin/reviews body whenever the
+     * PF-09). Spread into a POST /api/office-admin/reviews body whenever the
      * decision is `approved`.
      *
      * @return array<string, bool>
@@ -104,10 +106,34 @@ abstract class ConformanceTestCase extends TestCase
      * A valid seeded category id. Never hard-code an id: MySQL keeps the
      * auto-increment counter across RefreshDatabase rollbacks, so the
      * seeded rows are 1..10 in the first test, 11..20 in the next, etc.
+     *
+     * Returns a category whose access policy permits the fixture's
+     * "internal" level (config/documents.php access_policy), so the
+     * shared payload is a valid submission rather than one the step-9
+     * classification check refuses.
      */
     protected function categoryId(): int
     {
-        return Category::query()->value('id');
+        return $this->categoryIdPermitting('internal');
+    }
+
+    /**
+     * The id of a seeded category whose access policy allows $level.
+     */
+    protected function categoryIdPermitting(string $level): int
+    {
+        $policy = app(\App\Classification\AccessLevelPolicy::class);
+
+        $id = Category::query()
+            ->orderBy('id')
+            ->get(['id', 'category_code'])
+            ->first(fn (Category $c) => in_array(
+                $level,
+                $policy->forCategoryCode($c->category_code)['allowed'],
+                true,
+            ))?->id;
+
+        return $id ?? Category::query()->value('id');
     }
 
     /**

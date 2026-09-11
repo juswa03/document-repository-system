@@ -19,7 +19,7 @@ class TrackingNumberTest extends ConformanceTestCase
         Storage::fake(Document::DISK);
 
         $user = $this->user('user@example.test');
-        $category = Category::query()->firstOrFail();
+        $category = Category::findOrFail($this->categoryId());
         $prefix = "{$category->category_code}-{$user->office->office_code}-".now()->format('Ymd').'-';
 
         // Only "…-005" exists (001–004 were rolled back). A COUNT-based
@@ -39,7 +39,7 @@ class TrackingNumberTest extends ConformanceTestCase
     public function test_every_submission_gets_a_distinct_tracking_number(): void
     {
         Storage::fake(Document::DISK);
-        $category = Category::query()->value('id');
+        $category = $this->categoryId();
 
         $refs = [];
         for ($i = 0; $i < 4; $i++) {

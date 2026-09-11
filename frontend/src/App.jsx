@@ -10,14 +10,25 @@ import ManageRoles from './pages/dashboards/ManageRoles';
 import SystemSettings from './pages/dashboards/SystemSettings';
 import AuditLog from './pages/dashboards/AuditLog';
 import AiSettings from './pages/dashboards/AiSettings';
-import ManageLookups from './pages/dashboards/ManageLookups';
+import ManageOffices from './pages/dashboards/ManageOffices';
+import ManageCategories from './pages/dashboards/ManageCategories';
+import ManageRequestTypes from './pages/dashboards/ManageRequestTypes';
 import ManageObjectives from './pages/dashboards/ManageObjectives';
 import ManageRequiredDocuments from './pages/dashboards/ManageRequiredDocuments';
 import Governance from './pages/dashboards/Governance';
-import OsmAdminDashboard from './pages/dashboards/OsmAdminDashboard';
+import OfficeAdminDashboard from './pages/dashboards/OfficeAdminDashboard';
+import ReviewQueue from './pages/dashboards/ReviewQueue';
+import DecidedSubmissions from './pages/dashboards/DecidedSubmissions';
 import RetentionScreen from './pages/dashboards/RetentionScreen';
 import UserDashboard from './pages/dashboards/UserDashboard';
+import DraftSubmissions from './pages/dashboards/DraftSubmissions';
+import PendingSubmissions from './pages/dashboards/PendingSubmissions';
+import RevisionSubmissions from './pages/dashboards/RevisionSubmissions';
+import RejectedSubmissions from './pages/dashboards/RejectedSubmissions';
+import ApprovedSubmissions from './pages/dashboards/ApprovedSubmissions';
+import ManageProfile from './pages/dashboards/ManageProfile';
 import DocumentRepository from './pages/DocumentRepository';
+import NotFound from './pages/NotFound';
 
 // These two pull in recharts — code-split so the login screen and
 // every other page don't pay for a charting library they don't use.
@@ -98,10 +109,26 @@ export default function App() {
             }
           />
           <Route
-            path="/admin/lookups"
+            path="/admin/offices"
             element={
               <ProtectedRoute roles={['system_admin']}>
-                <ManageLookups />
+                <ManageOffices />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categories"
+            element={
+              <ProtectedRoute roles={['system_admin']}>
+                <ManageCategories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/request-types"
+            element={
+              <ProtectedRoute roles={['system_admin']}>
+                <ManageRequestTypes />
               </ProtectedRoute>
             }
           />
@@ -130,19 +157,35 @@ export default function App() {
             }
           />
 
-          {/* OSM admin */}
+          {/* Office admin */}
           <Route
-            path="/osm-admin"
+            path="/office-admin"
             element={
-              <ProtectedRoute roles={['osm_admin']}>
-                <OsmAdminDashboard />
+              <ProtectedRoute roles={['office_admin']}>
+                <OfficeAdminDashboard />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/osm-admin/retention"
+            path="/office-admin/queue"
             element={
-              <ProtectedRoute roles={['osm_admin']}>
+              <ProtectedRoute roles={['office_admin']}>
+                <ReviewQueue />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/office-admin/decided"
+            element={
+              <ProtectedRoute roles={['office_admin']}>
+                <DecidedSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/office-admin/retention"
+            element={
+              <ProtectedRoute roles={['office_admin']}>
                 <RetentionScreen />
               </ProtectedRoute>
             }
@@ -152,7 +195,7 @@ export default function App() {
           <Route
             path="/repository"
             element={
-              <ProtectedRoute roles={['osm_admin', 'system_admin']}>
+              <ProtectedRoute roles={['office_admin', 'system_admin']}>
                 <DocumentRepository />
               </ProtectedRoute>
             }
@@ -160,23 +203,74 @@ export default function App() {
           <Route
             path="/reports"
             element={
-              <ProtectedRoute roles={['osm_admin', 'system_admin']}>
+              <ProtectedRoute roles={['office_admin', 'system_admin']}>
                 <Lazy><Reports /></Lazy>
               </ProtectedRoute>
             }
           />
 
-          {/* Shared — user + osm_admin (osm_admin can also submit) */}
+          {/* User only — submit and track own submissions */}
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute roles={['user', 'osm_admin']}>
+              <ProtectedRoute roles={['user']}>
                 <UserDashboard />
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dashboard/drafts"
+            element={
+              <ProtectedRoute roles={['user']}>
+                <DraftSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/pending"
+            element={
+              <ProtectedRoute roles={['user']}>
+                <PendingSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/revision"
+            element={
+              <ProtectedRoute roles={['user']}>
+                <RevisionSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/rejected"
+            element={
+              <ProtectedRoute roles={['user']}>
+                <RejectedSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/approved"
+            element={
+              <ProtectedRoute roles={['user']}>
+                <ApprovedSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute roles={['user', 'office_admin', 'system_admin']}>
+                <ManageProfile />
+              </ProtectedRoute>
+            }
+          />
+          {/* The old user-only path, kept so existing links and bookmarks
+              do not break. */}
+          <Route path="/dashboard/profile" element={<Navigate to="/profile" replace />} />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

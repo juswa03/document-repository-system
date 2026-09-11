@@ -33,7 +33,7 @@ class RetentionLifecycleTest extends ConformanceTestCase
     {
         $doc = $this->approvedDocument();
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/archive")
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/archive")
             ->assertOk()
             ->assertJsonPath('retention_status', 'archived');
 
@@ -51,7 +51,7 @@ class RetentionLifecycleTest extends ConformanceTestCase
         $doc->archive();
 
         $refs = fn (array $query = []) => collect(
-            $this->asOsmAdmin()->getJson('/api/repository/documents?'.http_build_query($query))
+            $this->asOfficeAdmin()->getJson('/api/repository/documents?'.http_build_query($query))
                 ->json('data')
         )->pluck('ref');
 
@@ -63,7 +63,7 @@ class RetentionLifecycleTest extends ConformanceTestCase
     {
         $doc = $this->createDocument('user@example.test');   // still pending
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/archive")
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/archive")
             ->assertStatus(422);
     }
 
@@ -71,8 +71,8 @@ class RetentionLifecycleTest extends ConformanceTestCase
     {
         $doc = $this->approvedDocument();
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/archive")->assertOk();
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/archive")->assertStatus(422);
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/archive")->assertOk();
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/archive")->assertStatus(422);
     }
 
     public function test_an_archived_document_can_be_restored(): void
@@ -80,7 +80,7 @@ class RetentionLifecycleTest extends ConformanceTestCase
         $doc = $this->approvedDocument();
         $doc->archive();
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/restore")
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/restore")
             ->assertOk()
             ->assertJsonPath('retention_status', 'active');
 
@@ -97,7 +97,7 @@ class RetentionLifecycleTest extends ConformanceTestCase
         Storage::disk(Document::DISK)->assertExists($path);
         $doc->archive();
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/dispose", [
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/dispose", [
             'reason' => 'End of the approved retention schedule for FY 2020 minutes.',
         ])->assertOk()->assertJsonPath('retention_status', 'disposed');
 
@@ -114,7 +114,7 @@ class RetentionLifecycleTest extends ConformanceTestCase
         $doc = $this->approvedDocument();
         $doc->archive();
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/dispose", [])
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/dispose", [])
             ->assertStatus(422)->assertJsonValidationErrors('reason');
     }
 
@@ -122,7 +122,7 @@ class RetentionLifecycleTest extends ConformanceTestCase
     {
         $doc = $this->approvedDocument();   // active, not archived
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/documents/{$doc->id}/dispose", [
+        $this->asOfficeAdmin()->postJson("/api/office-admin/documents/{$doc->id}/dispose", [
             'reason' => 'Trying to skip archival.',
         ])->assertStatus(422);
     }
@@ -147,7 +147,7 @@ class RetentionLifecycleTest extends ConformanceTestCase
         $disposeDue = $this->approvedDocument();
         $disposeDue->update(['retention_status' => 'archived', 'archived_at' => now()->subMonths(30)]);
 
-        $body = $this->asOsmAdmin()->getJson('/api/osm-admin/retention')->assertOk()->json();
+        $body = $this->asOfficeAdmin()->getJson('/api/office-admin/retention')->assertOk()->json();
 
         $archivalRefs = collect($body['due_for_archival'])->pluck('ref');
         $this->assertContains($due->tracking_no, $archivalRefs);
@@ -181,7 +181,7 @@ class RetentionLifecycleTest extends ConformanceTestCase
     {
         $doc = $this->approvedDocument();
 
-        $this->asUser()->getJson('/api/osm-admin/retention')->assertForbidden();
-        $this->asUser()->postJson("/api/osm-admin/documents/{$doc->id}/archive")->assertForbidden();
+        $this->asUser()->getJson('/api/office-admin/retention')->assertForbidden();
+        $this->asUser()->postJson("/api/office-admin/documents/{$doc->id}/archive")->assertForbidden();
     }
 }

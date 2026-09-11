@@ -66,7 +66,7 @@ class AiSummaryNearDuplicateTest extends ConformanceTestCase
 
         $suggestion = $doc->aiSuggestions()->where('kind', 'summary')->firstOrFail();
 
-        $this->asOsmAdmin()->postJson("/api/osm-admin/ai-suggestions/{$suggestion->id}/accept")
+        $this->asOfficeAdmin()->postJson("/api/office-admin/ai-suggestions/{$suggestion->id}/accept")
             ->assertOk()->assertJsonPath('status', 'accepted');
 
         $this->assertDatabaseHas('ai_summaries', [

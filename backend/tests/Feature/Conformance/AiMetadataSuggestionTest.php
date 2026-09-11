@@ -84,7 +84,7 @@ class AiMetadataSuggestionTest extends ConformanceTestCase
         $this->analyze($fake, $document);
 
         $suggestion = $document->aiSuggestions()->firstOrFail();
-        $this->asOsmAdmin()->postJson("/api/osm-admin/ai-suggestions/{$suggestion->id}/accept")->assertOk();
+        $this->asOfficeAdmin()->postJson("/api/office-admin/ai-suggestions/{$suggestion->id}/accept")->assertOk();
 
         $document->refresh();
         $this->assertSame('AY 2025-2026', $document->reporting_period);
@@ -106,7 +106,7 @@ class AiMetadataSuggestionTest extends ConformanceTestCase
         $this->analyze($fake, $document);
 
         $suggestion = $document->aiSuggestions()->firstOrFail();
-        $this->asOsmAdmin()->postJson("/api/osm-admin/ai-suggestions/{$suggestion->id}/accept")->assertOk();
+        $this->asOfficeAdmin()->postJson("/api/office-admin/ai-suggestions/{$suggestion->id}/accept")->assertOk();
 
         $document->refresh();
         $this->assertSame('strategy, governance, planning', $document->keywords);
@@ -121,7 +121,7 @@ class AiMetadataSuggestionTest extends ConformanceTestCase
         $this->analyze($fake, $document);
 
         $suggestion = $document->aiSuggestions()->firstOrFail();
-        $this->asOsmAdmin()->postJson("/api/osm-admin/ai-suggestions/{$suggestion->id}/accept")
+        $this->asOfficeAdmin()->postJson("/api/office-admin/ai-suggestions/{$suggestion->id}/accept")
             ->assertOk()
             ->assertJsonPath('status', 'accepted');
 

@@ -54,7 +54,7 @@ class ReportNarrativeTest extends ConformanceTestCase
         $fake->reportNarrative = $this->narrative();
         $this->bind($fake);
 
-        $response = $this->asOsmAdmin()
+        $response = $this->asOfficeAdmin()
             ->postJson('/api/reports/document-aging/narrative')
             ->assertOk();
 
@@ -89,7 +89,7 @@ class ReportNarrativeTest extends ConformanceTestCase
     {
         $this->bind(new FakeAiProvider);
 
-        $this->asOsmAdmin()
+        $this->asOfficeAdmin()
             ->postJson('/api/reports/document-inventory/narrative')
             ->assertStatus(422);
     }
@@ -99,7 +99,7 @@ class ReportNarrativeTest extends ConformanceTestCase
         SystemSetting::current()->update(['ai_capabilities' => ['classification']]);
         $this->bind(new FakeAiProvider);
 
-        $this->asOsmAdmin()
+        $this->asOfficeAdmin()
             ->postJson('/api/reports/document-aging/narrative')
             ->assertStatus(422);
     }
@@ -110,7 +110,7 @@ class ReportNarrativeTest extends ConformanceTestCase
         $fake->configured = false;
         $this->bind($fake);
 
-        $this->asOsmAdmin()
+        $this->asOfficeAdmin()
             ->postJson('/api/reports/document-aging/narrative')
             ->assertStatus(422);
     }
@@ -134,7 +134,7 @@ class ReportNarrativeTest extends ConformanceTestCase
         $fake->reportNarrative = $this->narrative();
         $this->bind($fake);
 
-        $this->asOsmAdmin()
+        $this->asOfficeAdmin()
             ->postJson('/api/reports/document-aging/narrative')
             ->assertStatus(422);
 

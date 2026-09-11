@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Archive } from 'lucide-react';
 import DashboardShell from './dashboards/DashboardShell';
 import StatusBadge from '../components/StatusBadge';
 import Pager from '../components/Pager';
@@ -6,6 +7,9 @@ import VersionHistoryModal from '../components/VersionHistoryModal';
 import api from '../lib/api';
 import { downloadDocumentFile } from '../lib/download';
 import '../pages/dashboards/dashboards.css';
+import Banner from '../components/Banner';
+import { TableSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Any status' },
@@ -149,17 +153,17 @@ export default function DocumentRepository() {
   async function handleDownload(doc) {
     try {
       await downloadDocumentFile(doc.id, doc.title);
-    } catch {
-      setError('Could not download that file.');
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Could not download that file.');
     }
   }
 
   return (
     <DashboardShell eyebrow="Document repository" title="Search &amp; filter documents">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <section className="panel">
-        <form className="filter-bar" onSubmit={runSmartSearch} style={{ marginBottom: '0.9rem' }}>
+        <form className="filter-bar u-mb-3" onSubmit={runSmartSearch}>
           <div className="filter-field filter-field--grow">
             <label htmlFor="nl">
               Ask in plain language
@@ -180,12 +184,11 @@ export default function DocumentRepository() {
         </form>
 
         {smartNote && (
-          <p className="cell-muted" style={{ margin: '0 0 0.9rem' }}>
+          <p className="cell-muted u-my-0 u-mb-3">
             {smartNote}{' '}
             <button
               type="button"
-              className="btn btn--outline btn-sm"
-              style={{ marginLeft: '0.4rem' }}
+              className="btn btn--outline btn-sm u-ml-1"
               onClick={resetFilters}
             >
               Clear
@@ -275,7 +278,13 @@ export default function DocumentRepository() {
         </form>
 
         {loading ? (
-          <p className="loading-text">Searching…</p>
+          <TableSkeleton rows={6} label="Searching the repository" />
+        ) : result.data.length === 0 ? (
+          <EmptyState
+            icon={<Archive size={22} />}
+            title="No documents match"
+            message="Nothing in the repository fits these filters. Widen the date range or clear a filter to see more."
+          />
         ) : (
           <>
             <div className="table-scroll">
@@ -293,11 +302,6 @@ export default function DocumentRepository() {
                 </tr>
               </thead>
               <tbody>
-                {result.data.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="empty-row">No documents match these filters.</td>
-                  </tr>
-                )}
                 {result.data.map((d) => (
                   <Fragment key={d.id}>
                     <tr>
@@ -332,8 +336,8 @@ export default function DocumentRepository() {
                     </tr>
                     {detailId === d.id && (
                       <tr>
-                        <td colSpan={8} style={{ background: 'var(--paper-sunken)' }}>
-                          <div style={{ padding: '0.6rem 0.2rem', display: 'grid', gap: '0.5rem' }}>
+                        <td colSpan={8} className="detail-row-cell">
+                          <div className="detail-row-inner">
                             <div>
                               <strong>AI summary:</strong>{' '}
                               {d.summary ? (

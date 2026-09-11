@@ -28,7 +28,7 @@ class NotificationDeliveryTest extends ConformanceTestCase
             ->postJson('/api/dashboard/documents', $this->documentPayload())
             ->assertCreated()->json('id');
 
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document',
             'id' => $id,
             'decision' => 'approved',
@@ -85,10 +85,10 @@ class NotificationDeliveryTest extends ConformanceTestCase
 
         // The pool nudge is written but never mailed.
         $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->userId('osm.admin@example.test'),
+            'user_id' => $this->userId('office.admin@example.test'),
             'type' => 'review_queue',
         ]);
-        Notification::assertNotSentTo($this->user('osm.admin@example.test'), UserAlert::class);
+        Notification::assertNotSentTo($this->user('office.admin@example.test'), UserAlert::class);
     }
 
     public function test_index_returns_recent_rows_and_the_unread_count(): void
@@ -123,7 +123,7 @@ class NotificationDeliveryTest extends ConformanceTestCase
     public function test_a_user_cannot_mark_another_users_notification_read(): void
     {
         $row = NotificationRow::create([
-            'user_id' => $this->userId('osm.admin@example.test'),
+            'user_id' => $this->userId('office.admin@example.test'),
             'message' => 'not yours',
             'type' => 'system',
             'is_read' => false,

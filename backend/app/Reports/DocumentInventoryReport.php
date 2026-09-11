@@ -28,7 +28,7 @@ class DocumentInventoryReport extends Report
 
     public function acceptedFilters(): array
     {
-        return ['date_from', 'date_to', 'category_id', 'office_id', 'status'];
+        return ['date_from', 'date_to', 'category_id', 'office_id', 'reporting_period', 'status'];
     }
 
     public function columns(): array

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../lib/api';
+import Banner from './Banner';
 
 /**
  * Links a document to strategic objectives during review (Phase 11).
- * Reads the tree from GET /osm-admin/strategic-objectives and the
- * current links from GET /osm-admin/documents/{id}/objectives, then
+ * Reads the tree from GET /office-admin/strategic-objectives and the
+ * current links from GET /office-admin/documents/{id}/objectives, then
  * PUTs the whole set.
  */
 export default function ObjectivePicker({ documentId }) {
@@ -17,8 +18,8 @@ export default function ObjectivePicker({ documentId }) {
   useEffect(() => {
     let alive = true;
     Promise.all([
-      api.get('/osm-admin/strategic-objectives'),
-      api.get(`/osm-admin/documents/${documentId}/objectives`),
+      api.get('/office-admin/strategic-objectives'),
+      api.get(`/office-admin/documents/${documentId}/objectives`),
     ])
       .then(([tree, links]) => {
         if (!alive) return;
@@ -53,7 +54,7 @@ export default function ObjectivePicker({ documentId }) {
     setSaving(true);
     setError('');
     try {
-      await api.put(`/osm-admin/documents/${documentId}/objectives`, {
+      await api.put(`/office-admin/documents/${documentId}/objectives`, {
         objective_ids: [...selected],
       });
       setInitial(new Set(selected));
@@ -64,7 +65,7 @@ export default function ObjectivePicker({ documentId }) {
     }
   }
 
-  if (error) return <p className="error-banner">{error}</p>;
+  if (error) return <Banner tone="error">{error}</Banner>;
   if (flat === null) return <p className="loading-text">Loading objectives…</p>;
   if (flat.length === 0)
     return (
@@ -76,12 +77,9 @@ export default function ObjectivePicker({ documentId }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem 1.4rem' }}>
+      <div className="check-list">
         {flat.map((o) => (
-          <label
-            key={o.id}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.88rem' }}
-          >
+          <label key={o.id} className="check-row">
             <input
               type="checkbox"
               checked={selected.has(o.id)}
@@ -91,7 +89,7 @@ export default function ObjectivePicker({ documentId }) {
           </label>
         ))}
       </div>
-      <div className="btn-row" style={{ marginTop: '0.7rem' }}>
+      <div className="btn-row u-mt-3">
         <button className="btn btn--primary btn-sm" disabled={!dirty || saving} onClick={save}>
           {saving ? 'Saving…' : 'Save links'}
         </button>

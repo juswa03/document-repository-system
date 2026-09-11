@@ -49,7 +49,7 @@ class AdminUserTest extends ConformanceTestCase
         User::factory()->create([
             'full_name' => 'Zenaida Filed',
             'email' => 'zen@example.test',
-            'role' => 'osm_admin',
+            'role' => 'office_admin',
             'office_id' => $office,
             'is_active' => false,
         ]);

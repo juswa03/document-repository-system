@@ -18,7 +18,7 @@ class UserController extends Controller
     {
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
-            'role' => ['nullable', Rule::in(['system_admin', 'osm_admin', 'user'])],
+            'role' => ['nullable', Rule::in(['system_admin', 'office_admin', 'user'])],
             'status' => ['nullable', 'in:active,inactive'],
         ]);
 
@@ -48,7 +48,7 @@ class UserController extends Controller
         $data = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'role' => ['required', Rule::in(['system_admin', 'osm_admin', 'user'])],
+            'role' => ['required', Rule::in(['system_admin', 'office_admin', 'user'])],
             'office_id' => ['nullable', 'exists:offices,id'],
             'password' => ['required', 'string', 'min:8'],
         ]);
@@ -80,7 +80,7 @@ class UserController extends Controller
     {
         $data = $request->validate([
             'full_name' => ['sometimes', 'string', 'max:255'],
-            'role' => ['sometimes', Rule::in(['system_admin', 'osm_admin', 'user'])],
+            'role' => ['sometimes', Rule::in(['system_admin', 'office_admin', 'user'])],
             'office_id' => ['sometimes', 'nullable', 'exists:offices,id'],
             'is_active' => ['sometimes', 'boolean'],
             'password' => ['sometimes', 'string', 'min:8'],

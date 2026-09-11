@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Modal from '../../components/Modal';
 import api from '../../lib/api';
 import { checkUploadFile } from '../../lib/uploads';
+import Banner from '../../components/Banner';
 
 const DOCUMENT_TYPES = ['report', 'memo', 'minutes', 'plan', 'template', 'evidence', 'dataset'];
 const ACCESS_LEVELS = ['internal', 'public', 'restricted', 'confidential'];
@@ -75,7 +76,7 @@ export default function ResubmitModal({ submission, requestTypes, categories, on
   return (
     <Modal title={`Resubmit ${submission.ref}`} onClose={onClose}>
       {submission.remarks && (
-        <p className="cell-muted" style={{ marginBottom: '1.1rem' }}>
+        <p className="cell-muted u-mb-4">
           <strong>Reviewer's note:</strong> {submission.remarks}
         </p>
       )}
@@ -189,7 +190,7 @@ export default function ResubmitModal({ submission, requestTypes, categories, on
                 accept=".pdf,.doc,.docx"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
-              <p className="cell-muted" style={{ marginTop: '0.3rem' }}>
+              <p className="cell-muted u-mt-1">
                 PDF or Word. Leave blank to keep the file you already uploaded.
               </p>
             </div>
@@ -272,7 +273,7 @@ export default function ResubmitModal({ submission, requestTypes, categories, on
           </>
         )}
 
-        {error && <p className="error-banner">{error}</p>}
+        {error && <Banner tone="error">{error}</Banner>}
 
         <div className="btn-row">
           <button type="submit" className="btn btn--primary" disabled={saving}>

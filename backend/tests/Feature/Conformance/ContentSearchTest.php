@@ -34,7 +34,7 @@ class ContentSearchTest extends ConformanceTestCase
         ]);
         $miss = $this->doc(['title' => 'Staff away day', 'extracted_text' => 'Team building agenda and catering notes.']);
 
-        $refs = collect($this->asOsmAdmin()->getJson('/api/repository/documents?q=photovoltaic')->json('data'))
+        $refs = collect($this->asOfficeAdmin()->getJson('/api/repository/documents?q=photovoltaic')->json('data'))
             ->pluck('ref');
 
         $this->assertContains($hit->tracking_no, $refs);
@@ -45,8 +45,8 @@ class ContentSearchTest extends ConformanceTestCase
     {
         $doc = $this->doc(['title' => 'Rankings submission QS 2027', 'extracted_text' => 'nothing relevant here']);
 
-        $byTitle = collect($this->asOsmAdmin()->getJson('/api/repository/documents?q=Rankings')->json('data'))->pluck('ref');
-        $byRef = collect($this->asOsmAdmin()->getJson('/api/repository/documents?q='.$doc->tracking_no)->json('data'))->pluck('ref');
+        $byTitle = collect($this->asOfficeAdmin()->getJson('/api/repository/documents?q=Rankings')->json('data'))->pluck('ref');
+        $byRef = collect($this->asOfficeAdmin()->getJson('/api/repository/documents?q='.$doc->tracking_no)->json('data'))->pluck('ref');
 
         $this->assertContains($doc->tracking_no, $byTitle);
         $this->assertContains($doc->tracking_no, $byRef);
@@ -56,7 +56,7 @@ class ContentSearchTest extends ConformanceTestCase
     {
         $hit = $this->doc(['extracted_text' => 'Quarterly procurement variance analysis for infrastructure works.']);
 
-        $body = $this->asOsmAdmin()->postJson('/api/repository/search', [
+        $body = $this->asOfficeAdmin()->postJson('/api/repository/search', [
             'query' => 'anything mentioning procurement variance',
         ])->assertOk()->json();
 
@@ -78,7 +78,7 @@ class ContentSearchTest extends ConformanceTestCase
         $fake->searchFilters = ['q' => 'capital budget', 'category' => $categoryName, 'status' => 'approved'];
         $this->app->instance(AiProvider::class, $fake);
 
-        $body = $this->asOsmAdmin()->postJson('/api/repository/search', [
+        $body = $this->asOfficeAdmin()->postJson('/api/repository/search', [
             'query' => 'approved '.$categoryName.' documents about the capital budget',
         ])->assertOk()->json();
 

@@ -18,16 +18,17 @@ export default function DashboardShell({ eyebrow, title, children }) {
 
   return (
     <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
+      <a href="#main" className="skip-link">Skip to content</a>
       <Sidebar collapsed={collapsed} onToggle={toggleCollapsed} />
       <div className="app-main">
         <header className="page-header">
           <div>
-              <p className="page-eyebrow">{eyebrow}</p>
+            <p className="page-eyebrow">{eyebrow}</p>
             <h1 className="page-title">{title}</h1>
           </div>
           <NotificationBell />
         </header>
-        <main className="page-body">{children}</main>
+        <main className="page-body" id="main">{children}</main>
       </div>
     </div>
   );

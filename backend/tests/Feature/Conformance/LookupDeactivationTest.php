@@ -92,6 +92,6 @@ class LookupDeactivationTest extends ConformanceTestCase
     public function test_only_a_system_admin_can_deactivate_a_lookup(): void
     {
         $cat = Category::query()->firstOrFail();
-        $this->asOsmAdmin()->patchJson("/api/admin/categories/{$cat->id}", ['is_active' => false])->assertForbidden();
+        $this->asOfficeAdmin()->patchJson("/api/admin/categories/{$cat->id}", ['is_active' => false])->assertForbidden();
     }
 }

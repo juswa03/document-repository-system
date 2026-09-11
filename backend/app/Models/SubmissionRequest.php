@@ -19,6 +19,7 @@ class SubmissionRequest extends Model
         'tracking_no',
         'request_type_id',
         'requested_by',
+        'target_office_id',
         'title',
         'description',
         'needed_by',
@@ -42,10 +43,15 @@ class SubmissionRequest extends Model
     }
 
     /**
-     * Request types that require a monetary amount
-     * (docs/request-workflow-spec.md).
+     * Request types that require a monetary amount.
+     *
+     * Empty since the administrative transaction types (BUD budget, SUP
+     * supply) were retired — none of the document/data request types
+     * that replaced them involves money. `amount` stays on the model and
+     * remains optional, so a future paid request type only has to add
+     * its code here.
      */
-    public const AMOUNT_REQUIRED_TYPE_CODES = ['BUD', 'SUP'];
+    public const AMOUNT_REQUIRED_TYPE_CODES = [];
 
     public function requestType(): BelongsTo
     {
@@ -57,7 +63,7 @@ class SubmissionRequest extends Model
         return $this->belongsTo(User::class, 'requested_by');
     }
 
-    /** The OSM admin currently responsible for reviewing this (Phase 4.3). */
+    /** The office_admin currently responsible for reviewing this (Phase 4.3). */
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');

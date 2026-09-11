@@ -52,14 +52,14 @@ class PaginationTest extends ConformanceTestCase
     {
         $this->seedDocuments(45);
 
-        $first = $this->asOsmAdmin()->getJson('/api/osm-admin/queue')->assertOk()->json();
+        $first = $this->asOfficeAdmin()->getJson('/api/office-admin/queue')->assertOk()->json();
         $this->assertArrayHasKey('data', $first);
         $this->assertArrayHasKey('meta', $first);
         $this->assertSame(20, count($first['data']));
         $this->assertSame(45, $first['meta']['total']);
         $this->assertGreaterThanOrEqual(3, $first['meta']['last_page']);
 
-        $page3 = $this->asOsmAdmin()->getJson('/api/osm-admin/queue?page=3')->assertOk()->json();
+        $page3 = $this->asOfficeAdmin()->getJson('/api/office-admin/queue?page=3')->assertOk()->json();
         $this->assertSame(3, $page3['meta']['current_page']);
         $this->assertNotEmpty($page3['data']);
     }
@@ -70,7 +70,7 @@ class PaginationTest extends ConformanceTestCase
         $this->seedDocuments(5);
         $this->seedDocuments(3, ['category_id' => $other], 'OC');
 
-        $body = $this->asOsmAdmin()->getJson("/api/osm-admin/queue?category_id={$other}")->assertOk()->json();
+        $body = $this->asOfficeAdmin()->getJson("/api/office-admin/queue?category_id={$other}")->assertOk()->json();
 
         $this->assertSame(3, $body['meta']['total']);
     }
@@ -110,7 +110,7 @@ class PaginationTest extends ConformanceTestCase
     {
         $this->seedDocuments(3);
 
-        $body = $this->asOsmAdmin()->getJson('/api/repository/documents')->assertOk()->json();
+        $body = $this->asOfficeAdmin()->getJson('/api/repository/documents')->assertOk()->json();
         $this->assertArrayHasKey('data', $body);
         $this->assertArrayHasKey('meta', $body);
         $this->assertArrayHasKey('last_page', $body['meta']);
@@ -121,12 +121,12 @@ class PaginationTest extends ConformanceTestCase
         config(['performance.report_row_cap' => 3]);
         $this->seedDocuments(10, ['status' => 'approved']);
 
-        $json = $this->asOsmAdmin()->getJson('/api/reports/document-inventory')->assertOk()->json();
+        $json = $this->asOfficeAdmin()->getJson('/api/reports/document-inventory')->assertOk()->json();
         $this->assertTrue($json['truncated']);
         $this->assertSame(3, count($json['rows']));
         $this->assertGreaterThanOrEqual(10, $json['total_rows']);
 
-        $csv = $this->asOsmAdmin()->get('/api/reports/document-inventory?format=csv');
+        $csv = $this->asOfficeAdmin()->get('/api/reports/document-inventory?format=csv');
         $csv->assertOk();
         $lines = array_filter(explode("\n", trim($csv->streamedContent())));
         $this->assertGreaterThanOrEqual(11, count($lines)); // header + >=10 rows

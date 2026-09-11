@@ -2,6 +2,7 @@
 
 namespace App\Reports;
 
+use App\LeadTime\Target;
 use App\Models\Document;
 use App\Models\SubmissionRequest;
 use App\Reports\Concerns\FiltersDocuments;
@@ -102,7 +103,8 @@ class SubmissionMonitoringReport extends Report
             'status' => $model->status,
             'last_decision' => $model->review?->decision,
             'decided_at' => $model->review?->reviewed_at?->toDateTimeString(),
-            'days_in_stage' => $anchor ? (int) $anchor->diffInDays(now()) : null,
+            // Working days, matching the published lead-time targets.
+            'days_in_stage' => $anchor ? Target::workingDaysBetween($anchor, now()) : null,
         ];
     }
 

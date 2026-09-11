@@ -1,11 +1,11 @@
 .app-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--content-bg);
 }
 
 .app-main {
   margin-left: 240px;
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   transition: margin-left 0.18s ease;
@@ -47,7 +47,7 @@
 }
 
 .page-eyebrow {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   margin: 0 0 0.35rem;
 }
@@ -55,9 +55,11 @@
 .page-title {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.6rem;
+  font-size: var(--text-xl);
+  line-height: var(--leading-tight);
   margin: 0;
   color: var(--text-primary);
+  text-wrap: balance;
 }
 
 .page-body {
@@ -68,23 +70,22 @@
   background: var(--content-bg);
 }
 
-/* ---------- Cards / Panels ---------- */
+/* ---------- Cards / Panels ----------
+   .panel / .stat-card / .ai-sugg-card are surfaces — controls.css lists
+   them alongside .surface so they get ground + border + radius + shadow
+   automatically. Here they carry only their own spacing / layout. */
 
 .panel {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem 1.6rem 1.7rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
+  padding: var(--space-5) var(--space-5) var(--space-6);
+  margin-bottom: var(--space-5);
 }
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 .panel-title {
   margin: 0;
@@ -98,27 +99,29 @@
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .stat-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.2rem 1.25rem;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.15s ease;
+  padding: var(--space-4) 1.25rem;
+  transition: box-shadow var(--transition);
 }
 
 .stat-card:hover {
   box-shadow: var(--shadow-md);
 }
 
+/* Tone = a status-coloured left rule. Name in, not a hex (see StatCard.jsx). */
+.stat-card--success { border-left: 3px solid var(--success); }
+.stat-card--warning { border-left: 3px solid var(--warning); }
+.stat-card--danger { border-left: 3px solid var(--danger); }
+.stat-card--info { border-left: 3px solid var(--info); }
+
 .stat-value {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.9rem;
+  font-size: var(--text-2xl);
   color: var(--ink);
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -126,7 +129,7 @@
 }
 
 .stat-label {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   color: var(--text-label);
   margin-top: 0.45rem;
   text-transform: uppercase;
@@ -155,7 +158,7 @@
 
 .data-table th {
   text-align: left;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-label);
@@ -167,7 +170,7 @@
 .data-table td {
   padding: 0.7rem 0.5rem;
   border-bottom: 1px solid var(--border-light);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   color: var(--text-value);
   vertical-align: middle;
   font-variant-numeric: tabular-nums;
@@ -177,18 +180,44 @@
   border-bottom: none;
 }
 
-.data-table tbody tr:hover {
-  background: #f8fafc;
+.data-table tbody tr:hover,
+.data-table tbody tr:focus-within {
+  background: var(--gray-50);
+}
+
+/* Skeleton rows shaped like a data table while it loads. */
+.table-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+}
+
+.table-skeleton .skeleton {
+  height: 1.1rem;
+}
+
+.card-skeleton {
+  height: 4.5rem;
 }
 
 .cell-muted {
   color: var(--text-secondary);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
+}
+
+/* Overdue / past-target cells: colour AND a text flag (never colour alone). */
+.is-overdue {
+  color: var(--danger);
+}
+
+.overdue-flag {
+  font-weight: 600;
 }
 
 .cell-mono {
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
@@ -196,121 +225,115 @@
   text-align: center;
   color: var(--text-secondary);
   padding: 1.5rem 0.5rem;
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
+}
+
+/* ---------- Empty state ----------
+   A composed "nothing here yet" block — icon + line + optional action. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-4);
+  color: var(--text-secondary);
+}
+
+.empty-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
+.empty-state-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}
+
+.empty-state-message {
+  margin: 0;
+  max-width: 42ch;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.empty-state-action {
+  margin-top: var(--space-2);
 }
 
 /* ---------- Badges ---------- */
 
 .badge {
   display: inline-block;
-  font-size: 0.74rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   padding: 0.3rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   white-space: nowrap;
 }
 
-.badge--pending {
-  background: #f1f5f9;
-  color: #64748b;
+/* Status badges read the reconciled status tokens — one value per status,
+   shared with .banner and the workflow notices. */
+.badge--pending,
+.badge--inactive {
+  background: var(--gray-100);
+  color: var(--gray-500);
 }
 
 .badge--approved {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .badge--rejected {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.badge--revision {
-  background: #fef3c7;
-  color: #d97706;
-}
-
-.badge--active {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.badge--inactive {
-  background: #f1f5f9;
-  color: #64748b;
-}
-/* ---------- Buttons ---------- */
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.95rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-  font-family: var(--font-body);
-}
-
-.btn-sm {
-  padding: 0.35rem 0.7rem;
-  font-size: 0.78rem;
-}
-
-.btn--primary {
-  background: var(--primary);
-  color: #ffffff;
-}
-
-.btn--primary:hover:not(:disabled) {
-  background: var(--primary-hover);
-}
-
-.btn--outline {
-  background: #ffffff;
-  border-color: var(--border);
-  color: var(--text-value);
-}
-
-.btn--outline:hover:not(:disabled) {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--value-soft);
-}
-
-.btn--danger-outline {
-  background: #ffffff;
-  border-color: #fca5a5;
+  background: var(--danger-soft);
   color: var(--danger);
 }
 
-.btn--danger-outline:hover:not(:disabled) {
-  background: #fee2e2;
-  border-color: var(--danger);
+.badge--revision {
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
-.btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.badge--active {
+  background: var(--info-soft);
+  color: var(--info);
 }
 
-.btn-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+/* Draft — not yet submitted, so it reads as the quietest state on the
+   page. Outlined rather than filled: nothing has happened to it yet. */
+.badge--draft {
+  background: transparent;
+  color: var(--gray-500);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
+
+/* Submitted — in the queue but nobody has picked it up yet. */
+.badge--submitted {
+  background: var(--info-soft);
+  color: var(--info);
+}
+/* Buttons (.btn / .icon-btn) + .banner now live in src/styles/controls.css,
+   imported globally from index.css so the auth screens share them too. */
+
 /* ---------- Forms ---------- */
 
 .dash-field {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-4);
 }
 
 .dash-label {
   display: block;
-  font-size: 0.74rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -324,9 +347,9 @@
   width: 100%;
   padding: 0.6rem 0.75rem;
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--text-primary);
-  background: #ffffff;
+  background: var(--paper);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -341,14 +364,14 @@
 .dash-select:focus-visible,
 .dash-textarea:focus-visible {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-soft);
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 .dash-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 @media (max-width: 620px) {
@@ -365,7 +388,7 @@
   gap: 0.75rem;
   padding: 0.85rem 1rem;
   border-radius: var(--radius-sm);
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   line-height: 1.5;
   margin-bottom: 0.7rem;
   border-left: 4px solid var(--border);
@@ -376,17 +399,17 @@
 }
 
 .notice--revision {
-  background: #fffbeb;
+  background: var(--warning-soft);
   border-left-color: var(--warning);
 }
 
 .notice--rejected {
-  background: #fef2f2;
+  background: var(--danger-soft);
   border-left-color: var(--danger);
 }
 
 .notice--approved {
-  background: #f0fdf4;
+  background: var(--success-soft);
   border-left-color: var(--success);
 }
 
@@ -395,9 +418,49 @@
 .inline-form {
   margin-top: 0.75rem;
   padding: 0.9rem;
-  background: #f8fafc;
+  background: var(--gray-50);
   border: 1px dashed var(--border);
   border-radius: var(--radius-sm);
+}
+
+/* Section heading inside an .inline-form (smaller than a panel title). */
+.inline-form-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-2);
+  color: var(--text-primary);
+}
+
+/* A checkbox + label row in an inline checklist. */
+.check-option {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+/* A wrapping row of checkbox options (e.g. the objective picker). */
+.check-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) 1.4rem;
+}
+
+/* One checkbox + label, inline-aligned. */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-sm);
+}
+
+/* .btn-row pushed to the trailing edge (dialog actions). */
+.btn-row--end {
+  justify-content: flex-end;
+}
+
+/* Required-field asterisk. */
+.req-mark {
+  color: var(--danger);
 }
 
 /* ---------- Toggle switch ---------- */
@@ -416,12 +479,12 @@
 
 .toggle-copy p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   color: var(--text-primary);
 }
 
 .toggle-copy span {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
 }
 
@@ -442,8 +505,8 @@
 .toggle-slider {
   position: absolute;
   inset: 0;
-  background: #cbd5e1;
-  border-radius: 999px;
+  background: var(--gray-300);
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -481,12 +544,12 @@
 
 .role-name {
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
   margin: 0 0 0.25rem;
 }
 
 .role-desc {
-  font-size: 0.83rem;
+  font-size: var(--text-sm);
   color: var(--text-value);
   margin: 0 0 0.6rem;
 }
@@ -498,10 +561,10 @@
 }
 
 .chip {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   padding: 0.22rem 0.55rem;
-  border-radius: 999px;
-  background: #f1f5f9;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
   color: var(--text-label);
 }
 
@@ -510,7 +573,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -518,13 +581,12 @@
   padding: 1rem;
 }
 
+/* .modal-card is a surface (ground/border/radius/floating shadow set in
+   controls.css's selector list) — this only sizes and scrolls it. */
 .modal-card {
-  background: #ffffff;
-  border-radius: var(--radius-lg);
   width: 100%;
-  max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg);
 }
 
 .modal-header {
@@ -538,42 +600,31 @@
 .modal-header h2 {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
   margin: 0;
   color: var(--text-primary);
 }
 
+/* .modal-close renders as <button class="icon-btn modal-close"> — icon-btn
+   carries size / border / focus-visible; this only tunes the glyph. */
 .modal-close {
-  background: none;
-  border: none;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   line-height: 1;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 0 0.3rem;
 }
 
-.modal-close:hover {
+.modal-close:hover:not(:disabled) {
+  border-color: var(--danger);
   color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .modal-body {
   padding: 1.3rem;
 }
 
-.error-banner {
-  background: #fef2f2;
-  color: var(--danger);
-  border-left: 4px solid var(--danger);
-  padding: 0.7rem 0.9rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  margin-bottom: 1.25rem;
-}
-
 .loading-text {
   color: var(--text-label);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   padding: 1rem 0.5rem;
 }
 
@@ -581,23 +632,35 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--space-5);
 }
 
 .tab-btn {
   padding: 0.4rem 0.9rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: #ffffff;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  background: var(--paper);
   color: var(--text-value);
-  font-size: 0.82rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.tab-btn:hover:not(.is-active) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tab-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .tab-btn.is-active {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: var(--accent);
+  border-color: var(--accent);
   color: #ffffff;
 }
 
@@ -608,7 +671,7 @@
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.85rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-5);
   padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border-light);
 }
@@ -620,7 +683,7 @@
 }
 
 .filter-field label {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -630,10 +693,10 @@
 .filter-field input,
 .filter-field select {
   padding: 0.5rem 0.7rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: #ffffff;
+  background: var(--paper);
   color: var(--text-primary);
   font-family: var(--font-body);
   min-width: 9rem;
@@ -643,8 +706,8 @@
 .filter-field input:focus,
 .filter-field select:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-soft);
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 .filter-field--grow {
@@ -659,8 +722,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 1.1rem;
-  font-size: 0.83rem;
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 /* ---------- AI suggestion panel ---------- */
@@ -672,10 +735,8 @@
 }
 
 .ai-sugg-card {
+  
   padding: 0.7rem 0.85rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
 }
 
 .ai-sugg-head {
@@ -693,14 +754,14 @@
 }
 
 .ai-sugg-meta {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
 }
 
 .ai-sugg-detail {
   margin: 0.4rem 0;
   color: var(--text-value);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .ai-sugg-detail ul,
@@ -711,7 +772,157 @@ ul.ai-sugg-detail {
 
 .ai-sugg-why {
   margin: 0.3rem 0 0.6rem;
-  font-size: 0.83rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   font-style: italic;
+}
+
+/* ---------- Small utilities ----------
+   Replace ad-hoc inline style={{}} for the handful of recurring one-offs.
+   Prefer a real component class where the element is a real component;
+   these cover genuine spacing/layout micro-adjustments only. */
+
+.u-mt-1 { margin-top: var(--space-1); }
+.u-mt-2 { margin-top: var(--space-2); }
+.u-mt-3 { margin-top: var(--space-3); }
+.u-mt-4 { margin-top: var(--space-4); }
+.u-mb-1 { margin-bottom: var(--space-1); }
+.u-mb-2 { margin-bottom: var(--space-2); }
+.u-mb-3 { margin-bottom: var(--space-3); }
+.u-mb-4 { margin-bottom: var(--space-4); }
+.u-mb-5 { margin-bottom: var(--space-5); }
+.u-mb-0 { margin-bottom: 0; }
+.u-mt-0 { margin-top: 0; }
+.u-my-0 { margin-top: 0; margin-bottom: 0; }
+.u-ml-1 { margin-left: var(--space-1); }
+.u-maxw-sm { max-width: 420px; }
+
+.u-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.u-w-auto { width: auto; }
+.u-nowrap { white-space: nowrap; }
+.u-tnum { font-variant-numeric: tabular-nums; }
+.u-py-3 { padding-top: var(--space-3); padding-bottom: var(--space-3); }
+.u-flex-1 { flex: 1; }
+
+/* A stat card sized to a single short figure (not filling the grid track). */
+.stat-card--narrow { max-width: 180px; }
+
+/* A panel-title used as a standalone section heading with its own rhythm. */
+.section-title { margin: var(--space-6) 0 var(--space-3); }
+
+/* Sub-line under a table cell's main value (type detail, needed-by, …). */
+.cell-sub {
+  display: block;
+  font-size: 0.8em;
+}
+
+/* Inline overdue flag next to a reference — colour + ⚠ glyph (not colour alone). */
+.overdue-inline {
+  margin-left: var(--space-1);
+  font-size: 0.8em;
+  color: var(--danger);
+}
+
+/* Assignee <select> in the queue — sized to its content, min legible width. */
+.assignee-select {
+  min-width: 130px;
+}
+
+/* A form field constrained to a short control (e.g. an access-level select). */
+.field--narrow {
+  max-width: 260px;
+}
+
+/* Explanatory body copy above a panel's controls. Held to a readable measure. */
+.prose {
+  max-width: 68ch;
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+.prose--note {
+  font-size: var(--text-sm);
+  color: var(--text-label);
+  border-left: 2px solid var(--line-soft);
+  padding-left: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* Table column alignment. */
+.col-center { text-align: center; }
+.col-right { text-align: right; }
+th.col-right, td.col-right { font-variant-numeric: tabular-nums; }
+
+/* A table nested inside a detail row / panel body that shouldn't carry the
+   default outer margin. */
+.data-table--flush { margin: 0; }
+
+/* Expanded detail row under a table row — sunken so it reads as a drawer. */
+.detail-row > td,
+.detail-row-cell {
+  background: var(--paper-sunken);
+}
+
+.entry-detail {
+  padding: var(--space-2) 0;
+}
+
+/* The grid of fields shown inside an expanded repository detail row. */
+.detail-row-inner {
+  padding: var(--space-2);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.disclosure-caret {
+  margin-left: 0.4rem;
+}
+
+/* A table row the user can click to expand. */
+.row-expandable {
+  cursor: pointer;
+}
+
+/* ---------- Page-specific bits lifted out of inline styles ---------- */
+
+/* AiSettings — the "current status" strip under the intro copy. */
+.ai-status-row {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+/* ManageObjectives — tree-indented first column. --depth set inline (data). */
+.tree-cell {
+  padding-left: calc(0.8rem + var(--depth, 0) * 1.5rem);
+}
+
+/* ManageRoles — capability matrix. */
+.perm-group-row {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--text-xs);
+  padding-top: var(--space-4);
+}
+
+.perm-code {
+  opacity: 0.6;
+}
+
+.perm-yes {
+  color: var(--accent);
+}
+
+.perm-no {
+  opacity: 0.3;
+}
+
+/* ---------- Profile picture ----------
+   The avatar preview beside its upload / remove actions. */
+.profile-picture-row {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  flex-wrap: wrap;
 }

@@ -57,7 +57,7 @@ class DocumentController extends Controller
      */
     public function versions(Request $request, int $id)
     {
-        $document = Document::with(['versions.category', 'category'])->findOrFail($id);
+        $document = Document::with(['versions.category', 'category', 'review'])->findOrFail($id);
         $user = $request->user();
 
         if (! $document->isAccessibleBy($user)) {
@@ -77,6 +77,9 @@ class DocumentController extends Controller
                 'file_format' => $v->file_format,
                 'file_size' => $v->file_size,
                 'status_when_superseded' => $v->status,
+                // The decision that ended this version — what the
+                // reviewer did, alongside what they said about it.
+                'decision' => $v->status,
                 'review_remarks' => $v->review_remarks,
                 'superseded_at' => $v->superseded_at,
             ])
@@ -92,7 +95,14 @@ class DocumentController extends Controller
                 'file_format' => $document->file_format,
                 'file_size' => $document->file_size,
                 'status_when_superseded' => null,
-                'review_remarks' => null,
+                // The current version's own decision and remark live on
+                // the document's latest review, not on a frozen row.
+                // These were hardcoded null, so an approval remark could
+                // never be seen.
+                'decision' => $document->review?->decision,
+                'review_remarks' => $document->review?->remarks,
+                // Null by definition: nothing has superseded the version
+                // that is currently in force.
                 'superseded_at' => null,
             ])
             ->values();

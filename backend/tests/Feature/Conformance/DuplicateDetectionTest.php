@@ -125,8 +125,8 @@ class DuplicateDetectionTest extends ConformanceTestCase
         $id = $this->upload($user, $this->pdf('v1'))->assertCreated()->json('id');
         $before = Document::find($id)->content_hash;
 
-        Sanctum::actingAs($this->user('osm.admin@example.test'));
-        $this->postJson('/api/osm-admin/reviews', [
+        Sanctum::actingAs($this->user('office.admin@example.test'));
+        $this->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'revision', 'remarks' => 'redo',
         ])->assertCreated();
 

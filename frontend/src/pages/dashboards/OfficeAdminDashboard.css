@@ -1,0 +1,89 @@
+/* OSM review-queue specifics. Scoped here so it never touches
+   dashboards.css. Uses the same design tokens as the rest of the app. */
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.detail-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.detail-grid dt {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-label);
+}
+
+.detail-grid dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-value);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Response answer choice ----------
+   Upload a file, or hand over a document already in the repository.
+   The two are mutually exclusive, so they read as a segmented choice
+   rather than two independent controls. */
+
+.resp-choice {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.resp-choice .btn.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.repo-picker-list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  max-height: 15rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.repo-picker-list li + li {
+  border-top: 1px solid var(--border-light);
+}
+
+.repo-picker-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+}
+
+.repo-picker-option:hover {
+  background: var(--gray-50);
+}
+
+.repo-picker-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.repo-picker-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-value);
+}

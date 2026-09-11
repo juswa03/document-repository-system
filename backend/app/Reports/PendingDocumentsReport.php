@@ -2,6 +2,7 @@
 
 namespace App\Reports;
 
+use App\LeadTime\Target;
 use App\Models\Document;
 use App\Reports\Concerns\FiltersDocuments;
 use Illuminate\Support\Collection;
@@ -40,7 +41,7 @@ class PendingDocumentsReport extends Report
             ['key' => 'uploader', 'label' => 'Uploaded by'],
             ['key' => 'status', 'label' => 'Status'],
             ['key' => 'submitted_at', 'label' => 'Submitted'],
-            ['key' => 'days_waiting', 'label' => 'Days waiting'],
+            ['key' => 'days_waiting', 'label' => 'Working days waiting'],
         ];
     }
 
@@ -58,7 +59,10 @@ class PendingDocumentsReport extends Report
                 'uploader' => $d->uploader?->full_name,
                 'status' => $d->status,
                 'submitted_at' => $d->submitted_at?->toDateTimeString(),
-                'days_waiting' => $d->submitted_at ? (int) $d->submitted_at->diffInDays(now()) : null,
+                // Working days, matching the published lead-time targets.
+                'days_waiting' => $d->submitted_at
+                    ? Target::workingDaysBetween($d->submitted_at, now())
+                    : null,
             ]);
     }
 

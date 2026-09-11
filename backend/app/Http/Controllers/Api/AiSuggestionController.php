@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\DocumentAiSuggestion;
+use App\Models\Office;
 use Illuminate\Http\Request;
 
 /**
@@ -101,7 +102,7 @@ class AiSuggestionController extends Controller
         }
 
         if ($s->kind === Suggestion::KIND_METADATA) {
-            foreach (['reporting_period', 'keywords', 'description'] as $field) {
+            foreach (['title', 'reporting_period', 'keywords', 'description'] as $field) {
                 if (is_string($s->data['fields'][$field] ?? null)) {
                     $applied[$field] = $document->{$field} = $s->data['fields'][$field];
                 }
@@ -109,6 +110,13 @@ class AiSuggestionController extends Controller
             $date = $s->data['fields']['document_date'] ?? null;
             if (is_string($date) && strtotime($date) !== false) {
                 $applied['document_date'] = $document->document_date = $date;
+            }
+
+            // The extractor names the owning office; resolve it to an id.
+            // An unrecognised name is ignored rather than guessed at.
+            $officeId = Office::where('office_name', $s->data['fields']['office'] ?? null)->value('id');
+            if ($officeId !== null) {
+                $applied['office_id'] = $document->office_id = $officeId;
             }
         }
 

@@ -19,7 +19,7 @@ class AiSettingsTest extends ConformanceTestCase
     public function test_only_a_system_admin_can_read_or_change_ai_settings(): void
     {
         $this->asUser()->getJson('/api/admin/ai-settings')->assertForbidden();
-        $this->asOsmAdmin()->getJson('/api/admin/ai-settings')->assertForbidden();
+        $this->asOfficeAdmin()->getJson('/api/admin/ai-settings')->assertForbidden();
         $this->asUser()->patchJson('/api/admin/ai-settings', ['ai_enabled' => true])->assertForbidden();
     }
 

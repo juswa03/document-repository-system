@@ -16,7 +16,7 @@ class AuditLogFilterTest extends ConformanceTestCase
         parent::setUp();
 
         $admin = $this->user('system.admin@example.test');
-        $osm = $this->user('osm.admin@example.test');
+        $osm = $this->user('office.admin@example.test');
 
         AuditLog::record($admin->id, 'settings_updated', 'Changed maintenance mode.');
         AuditLog::record($osm->id, 'review_approved', 'Approved DOC-1.');
@@ -78,7 +78,7 @@ class AuditLogFilterTest extends ConformanceTestCase
 
     public function test_only_a_system_admin_can_read_the_audit_log(): void
     {
-        $this->asOsmAdmin()->getJson('/api/admin/audit-log')->assertForbidden();
+        $this->asOfficeAdmin()->getJson('/api/admin/audit-log')->assertForbidden();
         $this->asUser()->getJson('/api/admin/audit-log')->assertForbidden();
     }
 

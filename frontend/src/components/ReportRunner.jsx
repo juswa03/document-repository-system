@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import api from '../lib/api';
 import { downloadReportCsv } from '../lib/download';
+import Banner from './Banner';
 
 const STATUS_OPTIONS = ['pending', 'approved', 'rejected', 'revision'];
 const KIND_OPTIONS = ['all', 'document', 'request'];
@@ -102,8 +103,8 @@ export default function ReportRunner() {
         Object.entries(filters).filter(([, v]) => v !== '' && v != null)
       );
       await downloadReportCsv(report.key, params);
-    } catch {
-      setError('Could not export the CSV.');
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Could not export the CSV.');
     } finally {
       setExporting(false);
     }
@@ -172,9 +173,9 @@ export default function ReportRunner() {
         </div>
       </div>
 
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
-      <div className="dash-field" style={{ maxWidth: 420 }}>
+      <div className="dash-field u-maxw-sm">
         <label className="dash-label" htmlFor="report-key">Report</label>
         <select
           id="report-key"
@@ -186,12 +187,12 @@ export default function ReportRunner() {
             <option key={r.key} value={r.key}>{r.label}</option>
           ))}
         </select>
-        {report && <p className="cell-muted" style={{ marginTop: '0.35rem' }}>{report.description}</p>}
+        {report && <p className="cell-muted u-mt-1">{report.description}</p>}
       </div>
 
       {report && (
         <>
-          <div className="filter-bar" style={{ flexWrap: 'wrap', gap: '0.75rem', margin: '1rem 0' }}>
+          <div className="filter-bar u-my-4">
             {(report.filters || []).map((key) => (
               <div className="filter-field" key={key}>
                 <label htmlFor={`f-${key}`}>
@@ -212,7 +213,7 @@ export default function ReportRunner() {
                 onClick={generateNarrative}
                 disabled={narrativeLoading}
               >
-                <Sparkles size={14} style={{ marginRight: '0.35rem' }} />
+                <Sparkles size={14} />
                 {narrativeLoading ? 'Drafting…' : narrative ? 'Regenerate AI summary' : 'Generate AI summary'}
               </button>
             )}
@@ -221,7 +222,7 @@ export default function ReportRunner() {
           {result && (
             <>
               {result.summary && Object.keys(result.summary).length > 0 && (
-                <div className="stat-grid" style={{ marginBottom: '1rem' }}>
+                <div className="stat-grid u-mb-4">
                   {Object.entries(result.summary).map(([k, v]) => (
                     <div className="stat-card" key={k}>
                       <div className="stat-value">{v ?? '—'}</div>
@@ -231,7 +232,7 @@ export default function ReportRunner() {
                 </div>
               )}
 
-              {narrativeError && <p className="error-banner">{narrativeError}</p>}
+              {narrativeError && <Banner tone="error">{narrativeError}</Banner>}
 
               {narrative && (
                 <div className="ai-narrative-card">
@@ -278,7 +279,7 @@ export default function ReportRunner() {
                   </tbody>
                 </table>
               </div>
-              <p className="cell-muted" style={{ marginTop: '0.5rem' }}>
+              <p className="cell-muted u-mt-2">
                 {result.truncated
                   ? `Showing the first ${result.rows.length} of ${result.total_rows} rows — export to CSV for the full set.`
                   : `${result.rows.length} row${result.rows.length === 1 ? '' : 's'}`}{' '}

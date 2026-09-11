@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import api from '../../lib/api';
 import './dashboards.css';
+import Banner from '../../components/Banner';
 
 // Fallback copy if the API is unreachable — normally the role name and
 // description come straight from GET /api/admin/role-matrix so the screen
 // can never drift from what the backend enforces.
 const ROLE_FALLBACK = {
   user: { name: 'User / office', description: '' },
-  osm_admin: { name: 'OSM admin', description: '' },
+  office_admin: { name: 'Office admin', description: '' },
   system_admin: { name: 'System admin', description: '' },
 };
 
@@ -53,14 +54,14 @@ export default function ManageRoles() {
 
   return (
     <DashboardShell eyebrow="System / super admin" title="Manage roles">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <section className="panel">
         <div className="panel-header">
           <div>
             <h2 className="panel-title">Roles</h2>
             <p className="panel-subtitle">
-              Three fixed roles (decision 0.2). Assign a role per account in Manage users.
+              Three fixed roles. Assign a role per account in Manage users.
             </p>
           </div>
         </div>
@@ -87,13 +88,13 @@ export default function ManageRoles() {
         {loading ? (
           <p className="loading-text">Loading…</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div className="u-scroll-x">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Capability</th>
                   {roles.map((r) => (
-                    <th key={r} style={{ textAlign: 'center' }}>
+                    <th key={r} className="col-center">
                       {meta(r).name}
                     </th>
                   ))}
@@ -116,11 +117,7 @@ function FragmentGroup({ bucket, roles }) {
   return (
     <>
       <tr>
-        <td
-          colSpan={roles.length + 1}
-          className="cell-muted"
-          style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.72rem', paddingTop: '1rem' }}
-        >
+        <td colSpan={roles.length + 1} className="cell-muted perm-group-row">
           {bucket.group}
         </td>
       </tr>
@@ -128,18 +125,18 @@ function FragmentGroup({ bucket, roles }) {
         <tr key={row.capability}>
           <td>
             {row.label}
-            <span className="cell-mono" style={{ display: 'block', opacity: 0.6, fontSize: '.8em' }}>
+            <span className="cell-mono cell-sub perm-code">
               {row.capability}
             </span>
           </td>
           {roles.map((r) => (
-            <td key={r} style={{ textAlign: 'center' }}>
+            <td key={r} className="col-center">
               {row.allowed[r] ? (
-                <span aria-label="allowed" style={{ color: 'var(--primary)' }}>
+                <span aria-label="allowed" className="perm-yes">
                   ✓
                 </span>
               ) : (
-                <span aria-label="not allowed" style={{ opacity: 0.3 }}>
+                <span aria-label="not allowed" className="perm-no">
                   —
                 </span>
               )}

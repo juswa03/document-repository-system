@@ -36,9 +36,9 @@ class ReviewerNotificationTest extends ConformanceTestCase
         // so the whole OSM pool gets the lighter "review_queue" nudge
         // (in-app only); "review_pending" is reserved for a direct handoff.
         $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->userId('osm.admin@example.test'),
+            'user_id' => $this->userId('office.admin@example.test'),
             'type' => 'review_queue',
-            'link' => '/osm-admin',
+            'link' => '/office-admin',
         ]);
         $this->assertStringContainsString($ref, Notification::where('type', 'review_queue')->value('message'));
 
@@ -52,7 +52,7 @@ class ReviewerNotificationTest extends ConformanceTestCase
     public function test_reviewers_are_notified_again_on_resubmission(): void
     {
         $id = $this->uploadAsUser();
-        $this->asOsmAdmin()->postJson('/api/osm-admin/reviews', [
+        $this->asOfficeAdmin()->postJson('/api/office-admin/reviews', [
             'kind' => 'document', 'id' => $id, 'decision' => 'revision', 'remarks' => 'redo the period',
         ])->assertCreated();
 
@@ -63,19 +63,20 @@ class ReviewerNotificationTest extends ConformanceTestCase
         ])->assertOk();
 
         $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->userId('osm.admin@example.test'),
+            'user_id' => $this->userId('office.admin@example.test'),
             'type' => 'review_queue',
         ]);
     }
 
     public function test_a_reviewer_who_submits_does_not_notify_themselves(): void
     {
-        $this->asOsmAdmin()
-            ->postJson('/api/dashboard/documents', $this->documentPayload(['title' => 'OSM own upload']))
-            ->assertCreated();
+        // office_admin cannot use the dashboard endpoint (user-only), so
+        // create the document directly as the office admin and confirm the
+        // self-notification guard in notifyReviewers still holds.
+        $this->createDocument('office.admin@example.test', ['title' => 'Office admin own upload']);
 
         $this->assertDatabaseMissing('notifications', [
-            'user_id' => $this->userId('osm.admin@example.test'),
+            'user_id' => $this->userId('office.admin@example.test'),
             'type' => 'review_queue',
         ]);
     }

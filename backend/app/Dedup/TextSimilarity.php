@@ -39,6 +39,7 @@ class TextSimilarity
         Document::query()
             ->where('id', '!=', $document->id)
             ->where('retention_status', 'active')
+            ->where('status', '!=', Document::STATUS_DRAFT)
             ->whereNotNull('extracted_text')
             ->when($document->category_id, fn ($q, $v) => $q->where('category_id', $v))
             ->when($document->office_id, fn ($q, $v) => $q->where('office_id', $v))

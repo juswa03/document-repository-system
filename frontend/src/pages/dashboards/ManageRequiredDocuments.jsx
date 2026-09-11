@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import DashboardShell from './DashboardShell';
 import Modal from '../../components/Modal';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import Pager from '../../components/Pager';
+import usePagination from '../../lib/usePagination';
 import api from '../../lib/api';
 import './dashboards.css';
+import Banner from '../../components/Banner';
 
 const CADENCES = ['annual', 'semestral', 'quarterly', 'monthly', 'once'];
 const DOC_TYPES = ['', 'report', 'memo', 'minutes', 'plan', 'template', 'evidence', 'dataset'];
@@ -33,6 +37,7 @@ export default function ManageRequiredDocuments() {
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [confirmRemove, setConfirmRemove] = useState(null); // row id
 
   async function load() {
     setLoading(true);
@@ -74,6 +79,8 @@ export default function ManageRequiredDocuments() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, q, offices, categories]);
 
+  const { pageItems, page, setPage, meta } = usePagination(visible);
+
   async function save(e) {
     e.preventDefault();
     setError('');
@@ -107,18 +114,13 @@ export default function ManageRequiredDocuments() {
   }
 
   async function remove(id) {
-    if (!window.confirm('Remove this requirement?')) return;
-    try {
-      await api.delete(`/admin/required-documents/${id}`);
-      load();
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Could not remove that row.');
-    }
+    await api.delete(`/admin/required-documents/${id}`);
+    load();
   }
 
   return (
     <DashboardShell eyebrow="System / super admin" title="Required documents">
-      {error && <p className="error-banner">{error}</p>}
+      {error && <Banner tone="error">{error}</Banner>}
 
       <section className="panel">
         <div className="panel-header">
@@ -135,7 +137,7 @@ export default function ManageRequiredDocuments() {
 
         <div className="filter-bar">
           <div className="filter-field filter-field--grow">
-            <label htmlFor="rd-search" style={{ color: 'var(--text-label)' }}>
+            <label htmlFor="rd-search">
               Search
             </label>
             <input
@@ -172,7 +174,7 @@ export default function ManageRequiredDocuments() {
                   </td>
                 </tr>
               )}
-              {visible.map((row) => (
+              {pageItems.map((row) => (
                 <tr key={row.id}>
                   <td>{row.name}</td>
                   <td>{officeName(row.office_id)}</td>
@@ -186,7 +188,7 @@ export default function ManageRequiredDocuments() {
                       <button className="btn btn--outline btn-sm" onClick={() => setForm({ ...BLANK, ...row })}>
                         Edit
                       </button>
-                      <button className="btn btn--danger-outline btn-sm" onClick={() => remove(row.id)}>
+                      <button className="btn btn--danger-outline btn-sm" onClick={() => setConfirmRemove(row.id)}>
                         Remove
                       </button>
                     </div>
@@ -196,7 +198,18 @@ export default function ManageRequiredDocuments() {
             </tbody>
           </table>
         )}
+        <Pager meta={meta} page={page} onPage={setPage} />
       </section>
+
+      {confirmRemove != null && (
+        <ConfirmDialog
+          title="Remove this requirement?"
+          body="Submitters will no longer be asked for this document. Existing submissions are unaffected."
+          confirmLabel="Remove"
+          onConfirm={() => remove(confirmRemove)}
+          onClose={() => setConfirmRemove(null)}
+        />
+      )}
 
       {form && (
         <Modal
