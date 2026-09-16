@@ -30,8 +30,10 @@ class ControlPointsTest extends ConformanceTestCase
     {
         $document = $this->createDocument('user@example.test');
 
-        // Upload belongs to the user, not the reviewer.
-        $this->asOfficeAdmin()
+        // Upload belongs to a user or an office admin uploading to the
+        // repository they help review — not a system admin, who manages
+        // the platform rather than filing documents into it.
+        $this->asSystemAdmin()
             ->postJson('/api/dashboard/documents', $this->documentPayload())
             ->assertForbidden();
 

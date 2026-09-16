@@ -34,7 +34,7 @@ class AuditTrailReport extends Report
             ['key' => 'at', 'label' => 'When'],
             ['key' => 'actor', 'label' => 'Actor'],
             ['key' => 'action', 'label' => 'Action'],
-            ['key' => 'description', 'label' => 'Description'],
+            ['key' => 'description', 'label' => 'Description', 'wrap' => true],
             ['key' => 'subject', 'label' => 'Subject'],
             ['key' => 'ip', 'label' => 'IP address'],
         ];

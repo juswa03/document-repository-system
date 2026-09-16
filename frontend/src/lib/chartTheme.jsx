@@ -31,6 +31,38 @@ export function monthLabel(yearMonth) {
   });
 }
 
+// Roughly how many pixels one character of the axis tick font occupies —
+// used to decide when a category/office name needs truncating so it
+// doesn't overflow its allotted label width or sit inconsistently
+// distant from the bar depending on how long the name happens to be.
+const AXIS_CHAR_WIDTH = 6.2;
+
+function truncateToWidth(text, maxWidth) {
+  const maxChars = Math.max(1, Math.floor(maxWidth / AXIS_CHAR_WIDTH));
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, Math.max(1, maxChars - 1))}…`;
+}
+
+/**
+ * Drop-in <YAxis tick={<CategoryTick />}> for a horizontal bar chart whose
+ * category labels (a document category, an office name, …) vary in
+ * length. Recharts' default tick neither wraps nor ellipsizes long text,
+ * so labels either overflow the axis band into the chart or get clipped
+ * mid-character — inconsistent from one label to the next. This truncates
+ * every label to the same allotted width instead, right-aligned like the
+ * default, with the untruncated name available on hover via <title>.
+ */
+export function CategoryTick({ x, y, payload, width = 120 }) {
+  const full = String(payload.value ?? '');
+  const shown = truncateToWidth(full, width);
+  return (
+    <text x={x} y={y} dy={4} textAnchor="end">
+      {shown !== full && <title>{full}</title>}
+      {shown}
+    </text>
+  );
+}
+
 /**
  * Drop-in replacement for recharts' default <Tooltip content>.
  * Matches the app's panel styling instead of the library's default

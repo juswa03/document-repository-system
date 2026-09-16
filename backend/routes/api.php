@@ -214,9 +214,6 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // User / office — submit and track own submissions.
     Route::middleware('role:user')->prefix('dashboard')->group(function () {
         Route::get('/submissions', [SubmissionController::class, 'mine']);
-        // Steps 5 & 6 — duplicate/version check and AI suggestions shown
-        // to the uploader BEFORE they submit, so they confirm or override.
-        Route::post('/documents/preflight', SubmissionPreflightController::class);
 
         // Draft — encoded but not yet submitted. Invisible to reviewers
         // until submit promotes it into the queue.
@@ -225,8 +222,19 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('/documents/{id}/submit', [SubmissionController::class, 'submitDraft']);
         Route::delete('/documents/{id}/draft', [SubmissionController::class, 'destroyDraft']);
         Route::post('/requests', [SubmissionController::class, 'storeRequest']);
-        Route::post('/documents', [SubmissionController::class, 'storeDocument']);
         Route::post('/requests/{id}/resubmit', [SubmissionController::class, 'resubmitRequest']);
         Route::post('/documents/{id}/resubmit', [SubmissionController::class, 'resubmitDocument']);
+    });
+
+    // Document upload + its pre-submission preflight check — available to
+    // regular users AND office admins. An office admin's upload is tagged
+    // to their own office by default (office_id / target_office_id, same
+    // as anyone else) and still goes through the normal review queue; the
+    // self-review check in ReviewController::store() already stops them
+    // approving their own upload, so another reviewer in the office (or a
+    // system admin) has to decide on it.
+    Route::middleware('role:user,office_admin')->prefix('dashboard')->group(function () {
+        Route::post('/documents/preflight', SubmissionPreflightController::class);
+        Route::post('/documents', [SubmissionController::class, 'storeDocument']);
     });
 });

@@ -3,6 +3,7 @@ import Modal from '../../components/Modal';
 import api from '../../lib/api';
 import { checkUploadFile } from '../../lib/uploads';
 import Banner from '../../components/Banner';
+import ReportingPeriodField from '../../components/ReportingPeriodField';
 import './UserDashboard.css';
 
 const DOCUMENT_TYPES = ['report', 'memo', 'minutes', 'plan', 'template', 'evidence', 'dataset'];
@@ -21,8 +22,20 @@ const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
  * confirms or overrides those findings before anything is submitted.
  *
  * Pass `draft` to resume an existing draft instead of starting fresh.
+ * Pass `lockTargetOffice` to pin the submission to the uploader's own
+ * office — the field shows as fixed rather than an editable dropdown
+ * (used for an office admin uploading from the repository, who should
+ * not be routing documents to an office other than their own).
  */
-export default function NewDocumentModal({ categories, offices, draft, onClose, onSaved }) {
+export default function NewDocumentModal({
+  categories,
+  offices,
+  draft,
+  lockTargetOffice = false,
+  lockedOfficeName,
+  onClose,
+  onSaved,
+}) {
   const [title, setTitle] = useState(draft?.title || '');
   const [categoryId, setCategoryId] = useState(
     String(draft?.category_id || categories[0]?.id || ''),
@@ -335,12 +348,10 @@ export default function NewDocumentModal({ categories, offices, draft, onClose, 
         <div className="dash-row">
           <div className="dash-field">
             <label className="dash-label" htmlFor="reportingPeriod">Reporting / coverage period</label>
-            <input
+            <ReportingPeriodField
               id="reportingPeriod"
-              className="dash-input"
               value={reportingPeriod}
-              onChange={(e) => setReportingPeriod(e.target.value)}
-              placeholder="e.g. AY 2025–2026, Q3 2026, Jan–Jun 2026"
+              onChange={setReportingPeriod}
             />
           </div>
           <div className="dash-field">
@@ -367,17 +378,32 @@ export default function NewDocumentModal({ categories, offices, draft, onClose, 
 
         <div className="dash-field">
           <label className="dash-label" htmlFor="docTargetOffice">Target office</label>
-          <select
-            id="docTargetOffice"
-            className="dash-select"
-            value={targetOfficeId}
-            onChange={(e) => setTargetOfficeId(e.target.value)}
-          >
-            <option value="">— My office (default) —</option>
-            {offices.map((o) => (
-              <option key={o.id} value={o.id}>{o.office_name}</option>
-            ))}
-          </select>
+          {lockTargetOffice ? (
+            <>
+              <input
+                id="docTargetOffice"
+                className="dash-input"
+                value={lockedOfficeName || 'My office'}
+                disabled
+                readOnly
+              />
+              <p className="cell-muted u-mt-1">
+                Uploads here are always labeled to your own office.
+              </p>
+            </>
+          ) : (
+            <select
+              id="docTargetOffice"
+              className="dash-select"
+              value={targetOfficeId}
+              onChange={(e) => setTargetOfficeId(e.target.value)}
+            >
+              <option value="">— My office (default) —</option>
+              {offices.map((o) => (
+                <option key={o.id} value={o.id}>{o.office_name}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="dash-field">

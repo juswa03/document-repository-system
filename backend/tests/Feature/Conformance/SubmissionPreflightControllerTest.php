@@ -105,9 +105,16 @@ class SubmissionPreflightControllerTest extends ConformanceTestCase
     }
 
     #[Test]
-    public function an_office_admin_cannot_run_the_uploader_only_preflight_check(): void
+    public function an_office_admin_can_run_the_preflight_check_but_a_system_admin_cannot(): void
     {
+        // Office admins upload to the repository too, tagged to their own
+        // office, so they share this pre-submission check with regular
+        // users.
         $this->asOfficeAdmin()->post('/api/dashboard/documents/preflight', [
+            'file' => $this->pdf('allowed.pdf', 'x'),
+        ])->assertOk();
+
+        $this->asSystemAdmin()->post('/api/dashboard/documents/preflight', [
             'file' => $this->pdf('blocked.pdf', 'x'),
         ])->assertStatus(403);
     }

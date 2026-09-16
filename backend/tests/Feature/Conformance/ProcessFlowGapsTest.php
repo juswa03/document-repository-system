@@ -219,9 +219,17 @@ class ProcessFlowGapsTest extends ConformanceTestCase
     }
 
     #[Test]
-    public function an_office_admin_cannot_use_the_uploader_preflight(): void
+    public function an_office_admin_can_use_the_uploader_preflight_but_a_system_admin_cannot(): void
     {
+        // Office admins upload documents too (labeled to their own office),
+        // so they get the same pre-submission check a regular user does.
         $this->asOfficeAdmin()->post('/api/dashboard/documents/preflight', [
+            'file' => UploadedFile::fake()->create('x.pdf', 9, 'application/pdf'),
+        ])->assertOk();
+
+        // A system admin manages the platform rather than filing documents
+        // into it, so this stays closed to that role.
+        $this->asSystemAdmin()->post('/api/dashboard/documents/preflight', [
             'file' => UploadedFile::fake()->create('x.pdf', 9, 'application/pdf'),
         ])->assertForbidden();
     }

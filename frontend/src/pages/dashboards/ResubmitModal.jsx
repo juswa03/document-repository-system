@@ -3,6 +3,7 @@ import Modal from '../../components/Modal';
 import api from '../../lib/api';
 import { checkUploadFile } from '../../lib/uploads';
 import Banner from '../../components/Banner';
+import ReportingPeriodField from '../../components/ReportingPeriodField';
 
 const DOCUMENT_TYPES = ['report', 'memo', 'minutes', 'plan', 'template', 'evidence', 'dataset'];
 const ACCESS_LEVELS = ['internal', 'public', 'restricted', 'confidential'];
@@ -138,11 +139,10 @@ export default function ResubmitModal({ submission, requestTypes, categories, on
             <div className="dash-row">
               <div className="dash-field">
                 <label className="dash-label" htmlFor="resubmit-period">Reporting / coverage period</label>
-                <input
+                <ReportingPeriodField
                   id="resubmit-period"
-                  className="dash-input"
                   value={reportingPeriod}
-                  onChange={(e) => setReportingPeriod(e.target.value)}
+                  onChange={setReportingPeriod}
                 />
               </div>
               <div className="dash-field">

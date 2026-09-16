@@ -103,6 +103,14 @@
   margin-bottom: var(--space-5);
 }
 
+/* A breakdown tile (see .stat-value--breakdown) holds several label/count
+   rows rather than one short figure — give it more than one grid track
+   so its labels have room instead of wrapping against a 160px column. */
+.stat-card:has(.stat-value--breakdown) {
+  grid-column: span 2;
+  min-width: 0;
+}
+
 .stat-card {
   padding: var(--space-4) 1.25rem;
   transition: box-shadow var(--transition);
@@ -123,9 +131,63 @@
   font-weight: 600;
   font-size: var(--text-2xl);
   color: var(--ink);
-  line-height: 1;
+  line-height: 1.15;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
+  /* A stat tile is sized for a short scalar. If a value is ever a longer
+     string than that (a report's multi-entry breakdown, say), wrap and
+     shrink rather than overflow the card and overlap its neighbour. */
+  overflow-wrap: break-word;
+}
+
+/* A breakdown value (label: count, label: count, …) reads better as a
+   compact list than as one long run-on string at display size. */
+.stat-value--breakdown {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  letter-spacing: normal;
+}
+
+.stat-value--breakdown .breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.stat-value--breakdown .breakdown-row + .breakdown-row {
+  margin-top: 0.2rem;
+}
+
+.stat-value--breakdown .breakdown-count {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Expands/collapses the rows past BREAKDOWN_VISIBLE_ROWS — a real toggle,
+   not a dead-end "+N more" label. */
+.breakdown-toggle {
+  display: block;
+  margin-top: 0.3rem;
+  padding: 0.1rem 0.2rem;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.breakdown-toggle:hover {
+  text-decoration: underline;
+}
+
+.breakdown-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .stat-label {
@@ -153,6 +215,14 @@
 
 .data-table {
   width: 100%;
+  /* Fixed layout: every column gets an even share of the table's width
+     regardless of how long any one cell's content is. Without this, a
+     table with a free-text column (e.g. audit-trail's Description) lets
+     the browser's auto layout blow that column out and squeeze/overlap
+     the header cells next to it — the inconsistent-header bug. Column
+     content that's too long to fit truncates with an ellipsis (see
+     th/td rules below) instead of fighting its neighbours for space. */
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
@@ -165,6 +235,9 @@
   border-bottom: 1px solid var(--border);
   padding: 0 0.5rem 0.6rem;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .data-table td {
@@ -174,6 +247,18 @@
   color: var(--text-value);
   vertical-align: middle;
   font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Opt a specific column into wrapping instead of truncating — for prose
+   cells (audit-trail's Description, a report's free-text remarks) where
+   cutting the text off loses the point of the column. Add the class to
+   both the <th> and its <td>s so the column keeps one width. */
+.data-table .col-wrap {
+  white-space: normal;
+  word-break: break-word;
 }
 
 .data-table tbody tr:last-child td {
@@ -566,6 +651,43 @@
   border-radius: var(--radius-full);
   background: var(--gray-100);
   color: var(--text-label);
+}
+
+/* ---------- Reporting-period quick picks ---------- */
+
+.period-quick-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.chip-btn {
+  font-size: var(--text-xs);
+  padding: 0.22rem 0.6rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--text-value);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.chip-btn:hover:not(.is-active) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.chip-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.chip-btn.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
 }
 
 /* ---------- Modal ---------- */

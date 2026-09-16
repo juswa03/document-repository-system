@@ -3,6 +3,8 @@ import { Sparkles } from 'lucide-react';
 import api from '../lib/api';
 import { downloadReportCsv } from '../lib/download';
 import Banner from './Banner';
+import Pager from './Pager';
+import usePagination from '../lib/usePagination';
 
 const STATUS_OPTIONS = ['pending', 'approved', 'rejected', 'revision'];
 const KIND_OPTIONS = ['all', 'document', 'request'];
@@ -11,6 +13,61 @@ const KIND_OPTIONS = ['all', 'document', 'request'];
 // / scored reports where an AI sentence of context adds something over
 // the table. The raw-list reports have nothing extra for it to say.
 const NARRATABLE_REPORTS = ['compliance-evidence', 'office-submission-compliance', 'document-aging'];
+
+// A breakdown tile shows at most this many rows before summarising the
+// rest as "+N more" — audit-trail's by_action/most_active_users can carry
+// up to 15/10 entries, which is too many lines for a stat tile.
+const BREAKDOWN_VISIBLE_ROWS = 5;
+
+/**
+ * Most summary values are a plain scalar (a count, a percentage) and
+ * render straight into the stat tile. A few reports (document-inventory's
+ * by_status, audit-trail's by_action / by_actor) instead return a
+ * breakdown keyed by label -> count. Rendering that as one long
+ * "label: count, label: count, …" string at display-figure size is what
+ * overflowed the tile and overlapped its neighbours — this renders it as
+ * a small label/count list instead, capped to a few rows with a button to
+ * show the rest (and collapse back) rather than a dead-end "+N more".
+ */
+function SummaryValue({ value }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (value === null || value === undefined) {
+    return <div className="stat-value">—</div>;
+  }
+  if (typeof value !== 'object') {
+    return <div className="stat-value">{value}</div>;
+  }
+
+  const entries = Object.entries(value);
+  if (entries.length === 0) {
+    return <div className="stat-value">—</div>;
+  }
+
+  const hiddenCount = entries.length - BREAKDOWN_VISIBLE_ROWS;
+  const visible = expanded ? entries : entries.slice(0, BREAKDOWN_VISIBLE_ROWS);
+
+  return (
+    <div className="stat-value stat-value--breakdown">
+      {visible.map(([label, count]) => (
+        <div className="breakdown-row" key={label}>
+          <span>{label}</span>
+          <span className="breakdown-count">{count}</span>
+        </div>
+      ))}
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          className="breakdown-toggle"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+        >
+          {expanded ? 'Show fewer' : `+${hiddenCount} more`}
+        </button>
+      )}
+    </div>
+  );
+}
 
 /**
  * Phase 6.2 — the report picker (PF-16 surface). Lists GET /api/reports,
@@ -50,6 +107,12 @@ export default function ReportRunner() {
     () => reports.find((r) => r.key === selectedKey) || null,
     [reports, selectedKey]
   );
+
+  // The API already caps rows at report_row_cap (500) before sending them
+  // down — this pages through that already-loaded set in the browser, it
+  // does not fetch more from the server.
+  const rows = result?.rows ?? [];
+  const { pageItems, page, setPage, meta } = usePagination(rows);
 
   useEffect(() => {
     setFilters({});
@@ -192,15 +255,20 @@ export default function ReportRunner() {
 
       {report && (
         <>
-          <div className="filter-bar u-my-4">
-            {(report.filters || []).map((key) => (
-              <div className="filter-field" key={key}>
-                <label htmlFor={`f-${key}`}>
-                  {key.replace(/_/g, ' ')}
-                </label>
-                {renderFilter(key)}
-              </div>
-            ))}
+          {(report.filters || []).length > 0 && (
+            <div className="filter-bar u-mt-4">
+              {report.filters.map((key) => (
+                <div className="filter-field" key={key}>
+                  <label htmlFor={`f-${key}`}>
+                    {key.replace(/_/g, ' ')}
+                  </label>
+                  {renderFilter(key)}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="btn-row u-mb-4">
             <button className="btn btn--primary btn-sm" onClick={run} disabled={loading}>
               {loading ? 'Running…' : 'Run report'}
             </button>
@@ -225,7 +293,7 @@ export default function ReportRunner() {
                 <div className="stat-grid u-mb-4">
                   {Object.entries(result.summary).map(([k, v]) => (
                     <div className="stat-card" key={k}>
-                      <div className="stat-value">{v ?? '—'}</div>
+                      <SummaryValue value={v} />
                       <div className="stat-label">{k.replace(/_/g, ' ')}</div>
                     </div>
                   ))}
@@ -257,34 +325,45 @@ export default function ReportRunner() {
                   <thead>
                     <tr>
                       {result.columns.map((c) => (
-                        <th key={c.key}>{c.label}</th>
+                        <th key={c.key} className={c.wrap ? 'col-wrap' : undefined} title={c.label}>
+                          {c.label}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {result.rows.length === 0 && (
+                    {rows.length === 0 && (
                       <tr>
                         <td colSpan={result.columns.length} className="empty-row">
                           No rows for these filters.
                         </td>
                       </tr>
                     )}
-                    {result.rows.map((row, i) => (
+                    {pageItems.map((row, i) => (
                       <tr key={i}>
-                        {result.columns.map((c) => (
-                          <td key={c.key}>{String(row[c.key] ?? '')}</td>
-                        ))}
+                        {result.columns.map((c) => {
+                          const value = String(row[c.key] ?? '');
+                          return (
+                            <td key={c.key} className={c.wrap ? 'col-wrap' : undefined} title={c.wrap ? undefined : value}>
+                              {value}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p className="cell-muted u-mt-2">
-                {result.truncated
-                  ? `Showing the first ${result.rows.length} of ${result.total_rows} rows — export to CSV for the full set.`
-                  : `${result.rows.length} row${result.rows.length === 1 ? '' : 's'}`}{' '}
-                · generated {result.generated_at}
-              </p>
+
+              <Pager meta={meta} page={page} onPage={setPage} />
+
+              {result.truncated && (
+                <p className="cell-muted u-mt-1">
+                  The database has {result.total_rows} matching rows — this report caps the on-screen
+                  and CSV output at {result.row_cap}. Narrow the filters to see the rest.
+                </p>
+              )}
+              <p className="cell-muted u-mt-1">generated {result.generated_at}</p>
             </>
           )}
         </>

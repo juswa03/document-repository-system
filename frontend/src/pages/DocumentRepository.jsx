@@ -4,6 +4,8 @@ import DashboardShell from './dashboards/DashboardShell';
 import StatusBadge from '../components/StatusBadge';
 import Pager from '../components/Pager';
 import VersionHistoryModal from '../components/VersionHistoryModal';
+import NewDocumentModal from './dashboards/NewDocumentModal';
+import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { downloadDocumentFile } from '../lib/download';
 import '../pages/dashboards/dashboards.css';
@@ -20,9 +22,17 @@ const STATUS_OPTIONS = [
 ];
 
 export default function DocumentRepository() {
+  const { user } = useAuth();
+  const canUpload = user?.role === 'office_admin';
+
   const [categories, setCategories] = useState([]);
   const [offices, setOffices] = useState([]);
+  const ownOfficeName = useMemo(
+    () => offices.find((o) => String(o.id) === String(user?.office_id))?.office_name,
+    [offices, user?.office_id],
+  );
   const [objectives, setObjectives] = useState([]);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const [q, setQ] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -163,6 +173,21 @@ export default function DocumentRepository() {
       {error && <Banner tone="error">{error}</Banner>}
 
       <section className="panel">
+        {canUpload && (
+          <div className="panel-header">
+            <div>
+              <h2 className="panel-title">Repository</h2>
+              <p className="panel-subtitle">
+                Documents you upload here go through the normal review queue, labeled to your
+                office. Another reviewer in your office decides on it.
+              </p>
+            </div>
+            <button className="btn btn--primary btn-sm" onClick={() => setUploadOpen(true)}>
+              + Upload document
+            </button>
+          </div>
+        )}
+
         <form className="filter-bar u-mb-3" onSubmit={runSmartSearch}>
           <div className="filter-field filter-field--grow">
             <label htmlFor="nl">
@@ -370,6 +395,17 @@ export default function DocumentRepository() {
           documentId={historyDoc.id}
           reference={historyDoc.ref}
           onClose={() => setHistoryDoc(null)}
+        />
+      )}
+
+      {uploadOpen && (
+        <NewDocumentModal
+          categories={categories}
+          offices={offices}
+          lockTargetOffice
+          lockedOfficeName={ownOfficeName}
+          onClose={() => setUploadOpen(false)}
+          onSaved={() => runSearch()}
         />
       )}
     </DashboardShell>

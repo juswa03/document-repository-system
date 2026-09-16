@@ -17,7 +17,7 @@ import Banner from '../components/Banner';
 import DashboardShell from './dashboards/DashboardShell';
 import ReportRunner from '../components/ReportRunner';
 import api from '../lib/api';
-import { CHART_COLORS, STATUS_META, monthLabel, ChartTooltip } from '../lib/chartTheme';
+import { CHART_COLORS, STATUS_META, monthLabel, ChartTooltip, CategoryTick } from '../lib/chartTheme';
 import './dashboards/dashboards.css';
 import './Reports.css';
 
@@ -220,6 +220,8 @@ export default function Reports() {
                       width={130}
                       tickLine={false}
                       axisLine={false}
+                      tick={<CategoryTick width={122} />}
+                      interval={0}
                     />
                     <Tooltip content={<ChartTooltip />} cursor={{ fill: CHART_COLORS.sealSoft }} />
                     <Bar dataKey="total" name="Documents" fill={CHART_COLORS.seal} radius={[0, 4, 4, 0]} barSize={14} />
@@ -252,6 +254,8 @@ export default function Reports() {
                       width={130}
                       tickLine={false}
                       axisLine={false}
+                      tick={<CategoryTick width={122} />}
+                      interval={0}
                     />
                     <Tooltip content={<ChartTooltip />} cursor={{ fill: CHART_COLORS.sealSoft }} />
                     <Bar dataKey="total" name="Documents" fill={CHART_COLORS.ledger} radius={[0, 4, 4, 0]} barSize={14} />

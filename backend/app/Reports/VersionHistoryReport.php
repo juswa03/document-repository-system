@@ -36,7 +36,7 @@ class VersionHistoryReport extends Report
             ['key' => 'title', 'label' => 'Title at this version'],
             ['key' => 'category', 'label' => 'Category'],
             ['key' => 'status', 'label' => 'Status when superseded'],
-            ['key' => 'review_remarks', 'label' => 'Reviewer note'],
+            ['key' => 'review_remarks', 'label' => 'Reviewer note', 'wrap' => true],
             ['key' => 'superseded_by', 'label' => 'Superseded by'],
             ['key' => 'superseded_at', 'label' => 'Superseded'],
         ];
