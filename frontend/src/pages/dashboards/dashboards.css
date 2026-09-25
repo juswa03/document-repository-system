@@ -410,6 +410,64 @@
 /* Buttons (.btn / .icon-btn) + .banner now live in src/styles/controls.css,
    imported globally from index.css so the auth screens share them too. */
 
+/* ---------- User detail modal (Manage users) ----------
+   Same dt/dd grid convention as .detail-grid / .sub-detail-grid — long
+   values wrap instead of being cut off by a table cell's fixed width. */
+
+.user-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.user-detail-name {
+  margin: 0 0 0.3rem;
+  font-weight: 600;
+  font-size: var(--text-md);
+  color: var(--text-value);
+}
+
+.user-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.6rem 1.5rem;
+  margin: 0;
+}
+
+.user-detail-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.user-detail-grid dt {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-label);
+}
+
+.user-detail-grid dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-value);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Leading "view details" affordance before the Name column — a plain
+   icon button, not a text link, so it reads as an action distinct from
+   the data next to it. */
+.row-view-btn {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
 /* ---------- Forms ---------- */
 
 .dash-field {

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Eye } from 'lucide-react';
 import DashboardShell from './DashboardShell';
 import UserFormModal from './UserFormModal';
+import UserDetailModal from './UserDetailModal';
 import Pager from '../../components/Pager';
 import api from '../../lib/api';
 import './dashboards.css';
@@ -24,6 +26,7 @@ export default function ManageUsers() {
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [modal, setModal] = useState(null);
+  const [detailUser, setDetailUser] = useState(null);
 
   const params = useMemo(
     () => ({
@@ -152,6 +155,7 @@ export default function ManageUsers() {
           <table className="data-table">
             <thead>
               <tr>
+                <th></th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Office</th>
@@ -163,13 +167,24 @@ export default function ManageUsers() {
             <tbody>
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="empty-row">
+                  <td colSpan={7} className="empty-row">
                     {anyFilter ? 'No users match these filters.' : 'No users yet.'}
                   </td>
                 </tr>
               )}
               {users.map((u) => (
                 <tr key={u.id}>
+                  <td>
+                    <button
+                      type="button"
+                      className="icon-btn row-view-btn"
+                      onClick={() => setDetailUser(u)}
+                      aria-label={`View full details for ${u.full_name}`}
+                      title="View full details"
+                    >
+                      <Eye size={15} />
+                    </button>
+                  </td>
                   <td>{u.full_name}</td>
                   <td className="cell-muted">{u.email}</td>
                   <td className="cell-muted">{u.office?.office_name || '—'}</td>
@@ -209,6 +224,10 @@ export default function ManageUsers() {
           onClose={() => setModal(null)}
           onSaved={() => loadUsers()}
         />
+      )}
+
+      {detailUser && (
+        <UserDetailModal user={detailUser} onClose={() => setDetailUser(null)} />
       )}
     </DashboardShell>
   );
